@@ -331,7 +331,7 @@ reference, this is what the project is developed and tested with today:
 |---|---|---|
 | **Dev OS** | Linux ([Omarchy](https://omarchy.org), Arch-based) | any Linux with LLVM ≥ 19 (CI: Ubuntu 24.04), or a Mac for the macOS build |
 | **foobar2000** | v2.26 for Windows (x64, under Wine 11 Staging) and v2 for Mac (latest) | foobar2000 v2.x |
-| **foobar2000 SDK** | `SDK-2026-09-16` from [reupen/foobar2000-sdk-unmodified](https://github.com/reupen/foobar2000-sdk-unmodified) (`build.sh` and CI fetch the latest tag) | a foobar2000 v2 SDK; only `SDK-2026-09-16` and newer are tested |
+| **foobar2000 SDK** | `SDK-2026-10-01` from [reupen/foobar2000-sdk-unmodified](https://github.com/reupen/foobar2000-sdk-unmodified) (`build.sh` and CI fetch the latest tag) | a foobar2000 v2 SDK; only `SDK-2026-09-16` and newer are tested |
 | **C++ standard** | C++20 | |
 | **Windows compiler** | clang-cl / lld-link (LLVM 22) + CMake 4 + Ninja | LLVM **19+** for x64 (the MSVC STL headers reject older Clang), **22** for ARM64EC; CMake 3.21+; Visual Studio/MSVC isn't used or tested |
 | **Windows SDK / CRT** | Windows SDK 10.0.26100 + MSVC CRT, fetched by [xwin](https://github.com/Jake-Shadle/xwin) (x86_64 + aarch64) | |
