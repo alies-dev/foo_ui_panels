@@ -114,6 +114,7 @@
     [
       "@semantic-release/exec",
       {
+        "verifyReleaseCmd": "echo \"next_version=${nextRelease.version}\" >> \"$GITHUB_OUTPUT\"",
         "prepareCmd": "./scripts/release-build.sh ${nextRelease.version}"
       }
     ],

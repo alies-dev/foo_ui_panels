@@ -105,6 +105,13 @@ holds only what's true for both; anything repo-specific stays in the repo's own 
   dispatch the workflow by hand.
 - **Commits:** author Santiago Rodriguez only, no AI trailers. Push only at the end of an
   iteration.
+- **CI path filters:** files that aren't part of the component don't trigger CI builds:
+  `**.md`, issue forms, `LICENSE`, `.gitignore`, and local-only dev/test scripts and tools. The
+  `paths-ignore` lists live in foo_ui_panels' `build.yml` (push + PR; a new PR push cancels the
+  superseded run) and in foo_navidrome's `release.yml` (push). A new local-only script or tool
+  is added to that list in the same change. Anything CI builds, tests or packages with stays off
+  it. A release-worthy commit that only touches ignored paths doesn't release; dispatch the
+  workflow by hand.
 
 ### Code style and working rules
 - **Cross-platform:** every feature or fix lands on Windows and macOS. Logic goes in shared,
@@ -329,15 +336,25 @@ holds only what's true for both; anything repo-specific stays in the repo's own 
   `build.yml` checks out with `fetch-depth: 0` so CI builds see the tags.
 
 ## CI / release
-- `.github/workflows/build.yml` — build check on push/PR: Windows DLL + `check-portable` +
-  `make test` (ubuntu) and the universal mac bundle (macos-latest), both as artifacts.
+- `.github/workflows/build.yml` — build check on push/PR (`paths-ignore`: Shared conventions › CI
+  path filters), parallel jobs: `build` matrix (x64 / arm64ec / x86, one `build.sh` each, ccache
+  per arch via `setup-build`'s `ccache-key`, persisted with `actions/cache`), `test`
+  (`check-portable` + `make test` + skin-lint, `setup-build` with `xwin: false`) and `build-mac`
+  (universal bundle, uploaded as a `ditto` zip). On a push to main that will release (same
+  head-commit gate as Release) a `version` job runs `semantic-release --dry-run` first
+  (`verifyReleaseCmd` → `next_version`) and every build is stamped with it (`PUI_VERSION`, also
+  `version.sh --base` for the mac Info.plist) + a `release-stamp` artifact.
 - `.github/workflows/release.yml` — semantic-release (`.releaserc.json`, Conventional Commits,
   same config as foo_navidrome), chained to Build via `workflow_run` (only after a green Build of
-  a push to main; checks out that run's `head_sha`) or dispatched by hand; `scripts/release-build.sh <ver>` builds and
-  packages `foo_ui_panels_<ver>.fb2k-component` (DLL under `x64/`, `scripts/package.py`); then
-  `release-mac` builds the bundle from the tag and `release-package` re-uploads the asset with
-  `mac/` added (`--clobber`) before `notify-n8n`. Commit type = release impact:
+  a push to main; checks out that run's `head_sha`) or dispatched by hand. It downloads that Build
+  run's artifacts; `scripts/release-build.sh <ver>` packages them when `release-stamp` equals the
+  real next version (DLLs + mac bundle → complete asset, `has_mac=true`, so `release-mac` and
+  `release-package` are skipped) and otherwise builds the DLLs itself (dispatch, version drift);
+  then `release-mac` builds the bundle from the tag and `release-package` re-uploads the asset
+  with `mac/` added (`--clobber`) before `notify-n8n`. Commit type = release impact:
   `feat` minor, `fix`/`perf`/`refactor` patch, `chore`/`docs`/`ci`/`style`/`test` none.
+  The head-commit gate is duplicated in Build's `version` job and Release's `release` job — keep
+  them identical.
 - `main` is branch-protected (PR + review required; admins exempt): the release workflow never
   pushes to it — only the `v<ver>` tag and the GitHub release (notes = changelog; no
   `@semantic-release/git`/`changelog` plugins). `release-mac` passes `PUI_VERSION` itself. A PR

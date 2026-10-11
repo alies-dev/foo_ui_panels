@@ -4,7 +4,7 @@ usage() {
 Usage:
   scripts/version.sh                  print the version
   scripts/version.sh --header <path>  also write <path> as version_generated.h (untouched when current)
-  scripts/version.sh --base           the last released x.y.z (for the mac Info.plist)
+  scripts/version.sh --base           x.y.z of $PUI_VERSION, else the last released tag (mac Info.plist)
 Order: $PUI_VERSION, then git describe against the last v* tag (1.6.0 on a clean tag,
 1.6.0-dev.3+ef96f46[.dirty] after it), then version.txt (git archive), then 0.0.0-unknown.
 USAGE
@@ -44,6 +44,10 @@ format() {
 }
 
 if [ "${1:-}" = "--base" ]; then
+    if [ -n "${PUI_VERSION:-}" ]; then
+        echo "${PUI_VERSION%%-*}"
+        exit 0
+    fi
     desc="$(describe)" || { echo "0.0.0"; exit 0; }
     desc="$(format "$desc")"
     echo "${desc%%-*}"

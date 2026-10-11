@@ -43,6 +43,7 @@ jobs:
 
     outputs:
       released_version: ${{ steps.semantic_release.outputs.released_version }}
+      has_mac: ${{ steps.semantic_release.outputs.has_mac }}
 
     steps:
       - name: Checkout foo_ui_panels
@@ -52,6 +53,22 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
           path: foo_ui_panels
+
+      - name: Download the Build run's artifacts
+        if: github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -uo pipefail
+          P="$GITHUB_WORKSPACE/prebuilt"
+          for pair in release-stamp:stamp foo_ui_panels-dll:x64 foo_ui_panels-dll-arm64ec:arm64ec \
+                      foo_ui_panels-dll-x86:x86 foo_ui_panels-mac:mac; do
+            gh run download "$RUN_ID" -R "$GITHUB_REPOSITORY" -n "${pair%%:*}" -D "$P/${pair#*:}" \
+              || echo "no ${pair%%:*} artifact in run $RUN_ID"
+          done
+          echo "PREBUILT_DIR=$P" >> "$GITHUB_ENV"
+          find "$P" -type f
 
       - name: Set up cross-build
         uses: ./foo_ui_panels/.github/actions/setup-build
@@ -79,7 +96,7 @@ jobs:
 
   release-mac:
     needs: release
-    if: needs.release.outputs.released_version != ''
+    if: needs.release.outputs.released_version != '' && needs.release.outputs.has_mac != 'true'
     runs-on: macos-latest
     steps:
       - name: Checkout the release tag
@@ -113,6 +130,7 @@ jobs:
 
   release-package:
     needs: [release, release-mac]
+    if: needs.release.outputs.released_version != '' && needs.release.outputs.has_mac != 'true'
     runs-on: ubuntu-24.04
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -142,7 +160,11 @@ jobs:
 
   notify-n8n:
     needs: [release, release-package]
-    if: needs.release.outputs.released_version != '' && vars.FOOBAR_ORG_PUBLISH == 'true'
+    if: >-
+      !cancelled() && needs.release.result == 'success' &&
+      needs.release.outputs.released_version != '' && vars.FOOBAR_ORG_PUBLISH == 'true' &&
+      (needs.release-package.result == 'success' ||
+       (needs.release-package.result == 'skipped' && needs.release.outputs.has_mac == 'true'))
     runs-on: [self-hosted, homelab]
     steps:
       - name: Notify n8n for foobar2000.org publish
