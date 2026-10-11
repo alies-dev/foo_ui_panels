@@ -2,8 +2,8 @@
 usage() {
   cat <<'USAGE'
 Usage: scripts/release-build.sh <version>
-Builds both Windows DLLs (x64 + ARM64EC) with PUI_VERSION=<version> and packages
-foo_ui_panels_<version>.fb2k-component (x64/ + arm64ec/) in the repo root.
+Builds the Windows DLLs (x64, ARM64EC, x86) with PUI_VERSION=<version> and packages
+foo_ui_panels_<version>.fb2k-component (x64/ + arm64ec/ + the x86 DLL at the root) in the repo root.
 Called by semantic-release (.releaserc.json prepareCmd); writes released_version to
 $GITHUB_OUTPUT when run in Actions.
 USAGE
@@ -25,9 +25,10 @@ fi
 
 WIN_ARCH=x64 ./build.sh
 WIN_ARCH=arm64ec ./build.sh
+WIN_ARCH=x86 ./build.sh
 
 ASSET="foo_ui_panels_${VERSION}.fb2k-component"
 rm -f "$ASSET"
 python3 scripts/package.py "$ASSET" --dll build/foo_ui_panels.dll \
-  --arm64ec build-arm64ec/foo_ui_panels.dll
+  --arm64ec build-arm64ec/foo_ui_panels.dll --x86 build-x86/foo_ui_panels.dll
 echo "packaged: $ASSET"

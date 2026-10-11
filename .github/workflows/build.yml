@@ -32,6 +32,10 @@ jobs:
         working-directory: foo_ui_panels
         run: WIN_ARCH=arm64ec ./build.sh
 
+      - name: Build (x86)
+        working-directory: foo_ui_panels
+        run: WIN_ARCH=x86 ./build.sh
+
       - name: Platform-free code builds without Windows headers
         working-directory: foo_ui_panels
         run: make check-portable CXX_HOST=clang++-$LLVM_VERSION
@@ -55,6 +59,14 @@ jobs:
         with:
           name: foo_ui_panels-dll-arm64ec
           path: foo_ui_panels/build-arm64ec/foo_ui_panels.dll
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload foo_ui_panels.dll (x86)
+        uses: actions/upload-artifact@v7
+        with:
+          name: foo_ui_panels-dll-x86
+          path: foo_ui_panels/build-x86/foo_ui_panels.dll
           if-no-files-found: error
           retention-days: 7
 

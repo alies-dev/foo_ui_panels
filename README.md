@@ -1,7 +1,7 @@
 # foo_ui_panels — Panels UI (reborn)
 
-A [foobar2000](https://www.foobar2000.org/) v2 user interface component (Windows x64 and ARM64,
-macOS) that brings
+A [foobar2000](https://www.foobar2000.org/) v2 user interface component (Windows x64, ARM64 and
+32-bit, macOS) that brings
 back **Panels UI**: the scriptable, skinnable interface where the whole player window is a
 titleformat-driven canvas and panels, buttons, images and text are placed wherever the skin
 wants them.
@@ -43,10 +43,12 @@ One multi-arch `.fb2k-component` carries every build; foobar2000 loads the one m
 |---|---|
 | Windows x64 | `x64/foo_ui_panels.dll` |
 | Windows on ARM (ARM64) | `arm64ec/foo_ui_panels.dll` — native ARM64EC, what foobar2000 v2 for ARM runs as (not emulated x64) |
+| Windows 32-bit foobar2000 (x86) | `foo_ui_panels.dll` at the component's root |
 | macOS 11+ (Apple silicon and Intel) | `mac/foo_ui_panels.component` — universal (arm64 + x86_64) |
 | Linux | runs under Wine with the Windows x64 build |
 
-foobar2000 v2 is 64-bit only, so there's no 32-bit (x86) build.
+foobar2000 v2 is still offered as a 32-bit build on Windows; the x86 DLL is for that one. Prefer
+the 64-bit foobar2000 when you can.
 
 1. Download `foo_ui_panels_<version>.fb2k-component` from the [Releases](../../releases) page.
 2. Double-click it (or drag it onto foobar2000) and restart foobar2000.
@@ -249,7 +251,7 @@ The component keeps a log and can put everything a report needs on the clipboard
    reports)** and click **Apply** (macOS applies it right away).
 2. Make the problem happen again.
 3. Click **Copy Diagnostics** and paste it into the issue. It has the component, foobar2000 and
-   OS versions (and the build: x64, ARM64EC or macOS), the skin folder and main script, its
+   OS versions (and the build: x64, ARM64EC, x86 or macOS), the skin folder and main script, its
    panels, the script problems the engine found, the installed components and the recent log.
    Your user name is replaced in paths and your persistent variables' values are left out; read
    it before posting anyway.
@@ -333,7 +335,7 @@ reference, this is what the project is developed and tested with today:
 | **C++ standard** | C++20 | |
 | **Windows compiler** | clang-cl / lld-link (LLVM 22) + CMake 4 + Ninja | LLVM **19+** for x64 (the MSVC STL headers reject older Clang), **22** for ARM64EC; CMake 3.21+; Visual Studio/MSVC isn't used or tested |
 | **Windows SDK / CRT** | Windows SDK 10.0.26100 + MSVC CRT, fetched by [xwin](https://github.com/Jake-Shadle/xwin) (x86_64 + aarch64) | |
-| **Windows targets** | x64 and ARM64EC, both cross-compiled with the same clang-cl toolchain | ARM64EC needs a recent LLVM: built and tested with 22 (CI pins it) |
+| **Windows targets** | x64, ARM64EC and x86, all cross-compiled with the same clang-cl toolchain | ARM64EC needs a recent LLVM: built and tested with 22 (CI pins it) |
 | **macOS toolchain** | Linux cross-build with `clang` + `ld64.lld` against the macOS 14.5 SDK (from Xcode 15.4); CI uses the `macos-latest` runner's Xcode | Xcode command line tools + CMake + Ninja on a Mac; deployment target **macOS 11.0**, universal (arm64 + x86_64) |
 | **Runtime testing** | Wine (fast loop), a Windows 11 VM ([dockur/windows](https://github.com/dockur/windows)) and a macOS 14 Sonoma VM ([dockur/macos](https://github.com/dockur/macos)) | any Windows 10/11 or macOS 11+ machine with foobar2000 v2 |
 | **Build tooling** | GNU Make, bash, git | |
@@ -349,7 +351,7 @@ nor foobar2000.
 
 ```sh
 sudo pacman -S --needed clang lld llvm cmake ninja          # once (Arch shown)
-cargo install xwin && xwin --accept-license --arch x86_64,aarch64 splat --output ~/.xwin
+cargo install xwin && xwin --accept-license --arch x86,x86_64,aarch64 splat --output ~/.xwin
 make test        # unit tests + golden render tests (host compiler, ASan/UBSan)
 make run         # build.sh (fetches the SDK if missing), install into Wine foobar2000, relaunch
 ```
@@ -440,10 +442,11 @@ from [xwin](https://github.com/Jake-Shadle/xwin) — no Visual Studio needed.
 ```sh
 # prerequisites (Arch shown): clang, lld, llvm, cmake, ninja, and xwin
 sudo pacman -S --needed clang lld llvm cmake ninja
-cargo install xwin && xwin --accept-license --arch x86_64,aarch64 splat --output ~/.xwin
+cargo install xwin && xwin --accept-license --arch x86,x86_64,aarch64 splat --output ~/.xwin
 
 ./build.sh                    # -> build/foo_ui_panels.dll          (x64)
 WIN_ARCH=arm64ec ./build.sh   # -> build-arm64ec/foo_ui_panels.dll  (Windows on ARM; make build-arm64ec)
+WIN_ARCH=x86 ./build.sh       # -> build-x86/foo_ui_panels.dll      (32-bit foobar2000; make build-x86)
 ```
 
 The ARM64 build is ARM64EC, the flavour foobar2000 v2 for Windows on ARM itself is built as, so
@@ -487,7 +490,7 @@ Releases are automated with [semantic-release](https://github.com/semantic-relea
 from [Conventional Commits](https://www.conventionalcommits.org/): every push to `main` with a
 `feat:`/`fix:`/`perf:`/`refactor:` commit cuts a new semver release: a `v<version>` tag and a
 GitHub release whose notes are the changelog, with the multi-arch `.fb2k-component` attached
-(Windows x64 + ARM64EC, macOS universal), which is then
+(Windows x64 + ARM64EC + x86, macOS universal), which is then
 published to foobar2000.org. [`CHANGELOG.md`](CHANGELOG.md) has the full history, every version
 in detail. Changes reach `main` through pull requests.
 

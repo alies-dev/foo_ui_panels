@@ -5,11 +5,12 @@ Usage: ./build.sh
 Cross-builds foo_ui_panels.dll (Windows) on Linux with clang-cl + lld-link + xwin.
   WIN_ARCH=x64      (default) -> build/foo_ui_panels.dll
   WIN_ARCH=arm64ec  Windows on ARM, native -> build-arm64ec/foo_ui_panels.dll
+  WIN_ARCH=x86      32-bit foobar2000 -> build-x86/foo_ui_panels.dll
   SDK_ROOT=/path    parent of foobar2000/{SDK,shared,...} + pfc/ (default: the checkout's parent;
                     fetched from reupen/foobar2000-sdk-unmodified when missing)
   XWIN=/path        xwin splat (default ~/.xwin)
 Prereqs: clang-cl, lld-link, cmake, ninja, and
-  cargo install xwin && xwin --accept-license --arch x86_64,aarch64 splat --output ~/.xwin
+  cargo install xwin && xwin --accept-license --arch x86,x86_64,aarch64 splat --output ~/.xwin
 USAGE
 }
 case "${1:-}" in -h|--help) usage; exit 0 ;; esac
@@ -24,7 +25,8 @@ WIN_ARCH="${WIN_ARCH:-x64}"
 case "$WIN_ARCH" in
   x64) BUILD_DIR=build ;;
   arm64ec) BUILD_DIR=build-arm64ec ;;
-  *) echo "WIN_ARCH must be x64 or arm64ec (got '$WIN_ARCH')" >&2; exit 1 ;;
+  x86) BUILD_DIR=build-x86 ;;
+  *) echo "WIN_ARCH must be x64, arm64ec or x86 (got '$WIN_ARCH')" >&2; exit 1 ;;
 esac
 
 if [ ! -d "$SDK_ROOT/foobar2000/SDK" ] || [ ! -d "$SDK_ROOT/pfc" ]; then

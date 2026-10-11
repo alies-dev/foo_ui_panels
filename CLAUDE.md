@@ -1,13 +1,13 @@
 # foo_ui_panels — reborn (foobar2000 v2)
 
 Ground-up reimplementation of discontinued **Panels UI** (`foo_ui_panels`, ~fb2k 0.9.5.2)
-for **foobar2000 v2 — Windows x64 + ARM64EC, macOS (universal)**. Original closed-source — skin compatibility goal, not recompile.
+for **foobar2000 v2 — Windows x64 + ARM64EC + x86, macOS (universal)**. Original closed-source — skin compatibility goal, not recompile.
 See `DESIGN.md` for roadmap/facts, `FORMAT.md` for legacy type→DUI mapping.
 
 ## Working rule: every change is cross-platform
 Port started 2026-09-29 (foo_navidrome's rule, its CLAUDE.md "Working rule"): every feature/fix
 lands on BOTH platforms, all builds + CI legs green, release zip = `mac/` bundle + `x64/` +
-`arm64ec/` DLLs.
+`arm64ec/` DLLs + the x86 DLL at the zip root (fb2k's 32-bit slot).
 - Logic (script engine, panels, models, actions) is platform-free C++ in `src/core` /
   `src/panels`, drawing via `gfx::Canvas` and windowing via `ui::View`/`ui::ViewHost`/
   `ui::MainWindow` + the `ui::` service functions. No `HWND`/`HDC`/Cocoa there — only
@@ -183,10 +183,13 @@ lands on BOTH platforms, all builds + CI legs green, release zip = `mac/` bundle
   to the Panels UI windows, screenshot it, edit pvars in config.sqlite, restart with a DLL).
 
 ## Build (Arch Linux cross-compile)
-- Prereqs: `clang-cl`, `lld-link`, `cmake`, `ninja`; `cargo install xwin && xwin --accept-license --arch x86_64,aarch64 splat --output ~/.xwin`.
+- Prereqs: `clang-cl`, `lld-link`, `cmake`, `ninja`; `cargo install xwin && xwin --accept-license --arch x86,x86_64,aarch64 splat --output ~/.xwin`.
 - Build: `./build.sh` (or `make build`) → `build/foo_ui_panels.dll` (PE32+ x64, exports `foobar2000_get_interface`).
   `WIN_ARCH=arm64ec ./build.sh` (`make build-arm64ec`) → `build-arm64ec/` (Windows on ARM, native).
-  xwin must be splatted `--arch x86_64,aarch64`. No ARM runtime test env (Wine is x86) — CI only builds it.
+  `WIN_ARCH=x86` (`make build-x86`) → `build-x86/` (32-bit fb2k v2, links `shared-Win32.lib`).
+  xwin must be splatted `--arch x86,x86_64,aarch64`. No ARM runtime test env (Wine is x86) — CI only builds it.
+  x86 runtime: the 32-bit fb2k installer unpacks with `7z x` into a portable folder; components go in
+  `profile/user-components/` (no `-x64`).
 - macOS: `./scripts/mac-build.sh` (`make mac-build`) → `build-mac/foo_ui_panels.component`
   (universal; per-arch trees in `build-mac/<arch>`). `make check-portable` = core/panels compile
   with the host clang, no Windows headers.
@@ -246,7 +249,7 @@ lands on BOTH platforms, all builds + CI legs green, release zip = `mac/` bundle
 - Header case-sensitivity: SDK includes cased headers; xwin lowercases — build.sh symlinks cased names.
 - Include order in main.cpp: `WIN32_LEAN_AND_MEAN`+`<winsock2.h>` before `<windows.h>`, then
   `<objbase.h>` (COM `interface` macro) + `<mmsystem.h>` (`timeGetTime`).
-- Link `shared-x64.lib` / `shared-ARM64EC.lib` (fb2k `shared.dll` import libs, at `../foobar2000/shared/`).
+- Link `shared-x64.lib` / `shared-ARM64EC.lib` / `shared-Win32.lib` (fb2k `shared.dll` import libs, at `../foobar2000/shared/`).
 - libPPUI rich controls deferred to Phase 2+ (needs WTL+ATL, not in xwin).
 
 ## Deploy/test (Wine)

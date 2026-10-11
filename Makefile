@@ -1,4 +1,4 @@
-.PHONY: help build build-arm64ec deploy launch run kill clean check-portable test skin-lint docs mac-build mac-vm mac-vm-open mac-vm-test mac-vm-skin mac-vm-navidrome mac-vm-navidrome-config \
+.PHONY: help build build-arm64ec build-x86 deploy launch run kill clean check-portable test skin-lint docs mac-build mac-vm mac-vm-open mac-vm-test mac-vm-skin mac-vm-navidrome mac-vm-navidrome-config \
 	ui win11 win11-open win11-test win11-release win11-skin
 
 help:
@@ -6,11 +6,12 @@ help:
 	@echo ""
 	@echo "  build     cross-compile build/foo_ui_panels.dll (build.sh, Windows x64)"
 	@echo "  build-arm64ec   cross-compile build-arm64ec/foo_ui_panels.dll (Windows on ARM, native ARM64EC)"
+	@echo "  build-x86       cross-compile build-x86/foo_ui_panels.dll (32-bit foobar2000)"
 	@echo "  deploy    build, then install into the local Wine foobar2000"
 	@echo "  run       build, deploy, and (re)launch foobar2000 — the main dev loop"
 	@echo "  launch    kill + relaunch foobar2000 without rebuilding"
 	@echo "  kill      kill any running foobar2000.exe (Wine)"
-	@echo "  clean     remove build/, build-arm64ec/ and build-mac/"
+	@echo "  clean     remove build/, build-arm64ec/, build-x86/ and build-mac/"
 	@echo "  check-portable  compile the platform-free sources (core/panels) for a non-Windows host"
 	@echo "  test            build + run the host-side unit tests (tests/, ASan/UBSan)"
 	@echo "  skin-lint       build build/tools/skin_lint; LINT_DIR=<folder> also runs it on that skin"
@@ -43,6 +44,9 @@ build:
 build-arm64ec:
 	WIN_ARCH=arm64ec ./build.sh
 
+build-x86:
+	WIN_ARCH=x86 ./build.sh
+
 deploy: build
 	./scripts/deploy.sh
 
@@ -56,7 +60,7 @@ kill:
 	pkill -f 'foobar2000.exe' 2>/dev/null || true
 
 clean:
-	rm -rf build build-arm64ec build-mac
+	rm -rf build build-arm64ec build-x86 build-mac
 
 SDK_ROOT ?= $(abspath ..)
 CXX_HOST ?= clang++

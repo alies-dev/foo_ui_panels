@@ -96,11 +96,18 @@ pui_embed_images("${CMAKE_SOURCE_DIR}/res" "${PUI_GENERATED_DIR}/builtin_images.
 list(APPEND COMP_SRC "${PUI_GENERATED_DIR}/builtin_images.cpp")
 
 if(WIN32)
+  if(WIN_ARCH STREQUAL "arm64ec")
+    set(PUI_SHARED_LIB shared-ARM64EC.lib)
+  elseif(WIN_ARCH STREQUAL "x86")
+    set(PUI_SHARED_LIB shared-Win32.lib)
+  else()
+    set(PUI_SHARED_LIB shared-x64.lib)
+  endif()
   add_library(foo_ui_panels SHARED ${COMP_SRC})
   set_target_properties(foo_ui_panels PROPERTIES PREFIX "" SUFFIX ".dll")
   target_link_libraries(foo_ui_panels PRIVATE
     fb2ksdk pfc
-    "${SDK}/foobar2000/shared/$<IF:$<STREQUAL:${WIN_ARCH},arm64ec>,shared-ARM64EC.lib,shared-x64.lib>"
+    "${SDK}/foobar2000/shared/${PUI_SHARED_LIB}"
     user32 gdi32 shell32 ole32 oleaut32 uuid comctl32 comdlg32 advapi32 shlwapi winmm msimg32 gdiplus uxtheme)
 else()
   add_library(foo_ui_panels MODULE ${COMP_SRC})

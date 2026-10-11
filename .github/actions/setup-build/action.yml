@@ -2,8 +2,8 @@ name: Set up cross-build
 description: >-
   Lays out the foobar2000 SDK as siblings of the repo checkout (the layout build.sh /
   CMakeLists.txt expect, same as foo_navidrome) and installs the Linux -> Windows x64 +
-  ARM64EC cross toolchain: clang-cl, lld-link, llvm-rc/mt, cmake, ninja, plus the
-  xwin-splatted Windows SDK/CRT for both arches (cached). Exports LLVM_VERSION, so later
+  ARM64EC + x86 cross toolchain: clang-cl, lld-link, llvm-rc/mt, cmake, ninja, plus the
+  xwin-splatted Windows SDK/CRT for every arch (cached). Exports LLVM_VERSION, so later
   steps can name the matching host compiler (clang++-$LLVM_VERSION).
   Expects the repo to be checked out at $GITHUB_WORKSPACE/foo_ui_panels.
 
@@ -15,7 +15,7 @@ runs:
 
     - name: Check the Windows import libs are there
       shell: bash
-      run: test -f foobar2000/shared/shared-x64.lib && test -f foobar2000/shared/shared-ARM64EC.lib
+      run: test -f foobar2000/shared/shared-x64.lib && test -f foobar2000/shared/shared-ARM64EC.lib && test -f foobar2000/shared/shared-Win32.lib
 
     - name: Install clang-cl / lld-link / cmake / ninja (LLVM 22)
       shell: bash
@@ -47,7 +47,7 @@ runs:
       uses: actions/cache@v6
       with:
         path: ~/.xwin
-        key: xwin-${{ runner.os }}-x86_64-aarch64-v2
+        key: xwin-${{ runner.os }}-x86-x86_64-aarch64-v3
 
     - name: Splat Windows SDK/CRT with xwin
       if: steps.xwin-cache.outputs.cache-hit != 'true'
@@ -55,4 +55,4 @@ runs:
       run: |
         set -euo pipefail
         cargo install xwin --locked
-        xwin --accept-license --arch x86_64,aarch64 splat --output ~/.xwin
+        xwin --accept-license --arch x86,x86_64,aarch64 splat --output ~/.xwin

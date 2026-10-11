@@ -5,9 +5,10 @@ ap = argparse.ArgumentParser()
 ap.add_argument("out")
 ap.add_argument("--dll")
 ap.add_argument("--arm64ec")
+ap.add_argument("--x86")
 ap.add_argument("--mac")
 a = ap.parse_args()
-if not a.dll and not a.arm64ec and not a.mac:
+if not a.dll and not a.arm64ec and not a.x86 and not a.mac:
     ap.error("nothing to package")
 
 def add(z, path, arc):
@@ -19,6 +20,8 @@ def add(z, path, arc):
 if os.path.exists(a.out):
     os.remove(a.out)
 with zipfile.ZipFile(a.out, "w") as z:
+    if a.x86:
+        add(z, a.x86, "foo_ui_panels.dll")
     if a.dll:
         add(z, a.dll, "x64/foo_ui_panels.dll")
     if a.arm64ec:

@@ -2,6 +2,7 @@
 build/
 build-mac/
 build-arm64ec/
+build-x86/
 *.dll
 *.lib
 *.pdb
