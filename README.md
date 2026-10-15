@@ -434,11 +434,16 @@ real Windows or Mac machine with foobar2000 v2 works the same way.
 
 ### Driving the UI from scripts, and letting an LLM agent do it
 
-`scripts/ui-test.sh` drives the Panels UI running in the local Wine foobar2000 without
-touching your mouse or keyboard: `tools/wclick.c` runs inside Wine and posts input straight
-to the window (Hyprland host, screenshots via `grim`).
+`scripts/ui-test.sh <wine|win11|mac> <scenario>` drives the real foobar2000 with Panels UI on
+every platform through the same scenarios, and checks `foo_ui_panels.log`, the process and crash
+reports. Under Wine it doesn't touch your mouse or keyboard: `tools/wclick.c` runs inside Wine
+and posts input straight to the window (Hyprland host, screenshots via `grim`); the VMs take
+VNC input.
 
 ```sh
+make ui-smoke                              # Wine: deploy, relaunch, skin + window + playback, log checks
+make win11-smoke / make mac-vm-smoke       # the same scenario on real Windows 11 / the macOS VM
+make ui-compare ARGS='smoke'               # all three, step matrix marking where they differ (PARALLEL=1: at once)
 make ui ARGS='restart'                     # graceful close, install build/ DLL, relaunch + play
 make ui ARGS='click X Y r'                 # also dbl, wheelN, key:VK, type:TEXT, bmclick, …
 make ui ARGS='shot build/ui-test/after.png'

@@ -50,7 +50,7 @@ public:
 
 private:
     Logger() = default;
-    void emit(const std::string& text, bool toRing);
+    void emit(const std::string& text, bool toRing, bool infoOnly = false);
     void append(const std::string& text);
     void rotate_if_needed(bool startup);
 
@@ -61,7 +61,7 @@ private:
     std::function<void(const std::string&)> m_console;
     std::string m_date;
     LineRing m_ring{ kRingLines };
-    std::deque<std::string> m_pending;
+    std::deque<std::pair<bool, std::string>> m_pending;
 };
 
 inline void info(const std::string& tag, const std::string& msg) { Logger::get().write(Level::Info, tag, msg); }

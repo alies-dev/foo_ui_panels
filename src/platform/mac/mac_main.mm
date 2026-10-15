@@ -7,6 +7,7 @@
 #include "../../core/image_cache.h"
 #include "../../core/fs_util.h"
 #include "../../core/ui_settings.h"
+#include "../../core/log.h"
 #include <algorithm>
 #include <vector>
 
@@ -285,6 +286,7 @@ public:
         [win.contentView addSubview:canvas];
         m_root->on_window_attached();
         [win makeKeyAndOrderFront:nil];
+        pui::log::info("ui", "main window created");
         m_window = win;
         g_active_ui = this;
         return (__bridge void*)win;

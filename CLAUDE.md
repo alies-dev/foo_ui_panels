@@ -147,6 +147,13 @@ holds only what's true for both; anything repo-specific stays in the repo's own 
 - **macOS VM:** `../macos-devbox` (`mvm`, dockur/macos, Intel guest). **Windows 11 VM:**
   `../windows-devbox` (`wvm`, dockur/windows), for Dark Mode, DPI and native theming that Wine
   fakes. Never `docker prune`/`rm`/`rmi`.
+- **UI tests:** both repos drive the real foobar2000 with one script,
+  `scripts/ui-test.sh <wine|win11|mac> <scenario>`: each scenario is written once over a small
+  per-platform driver and asserts on the component log, the process and crash reports.
+  `ui-test.sh compare <scenario> [platforms]` prints a step matrix that marks where platforms
+  differ (`PARALLEL=1` runs them at once; one test agent per platform works the same way).
+  Run Windows changes on Wine *and* the Win11 VM: Wine is an emulation and real Windows
+  differs (dark-mode theming, popups, focus). Check the screenshots, not only the log.
 
 ### Troubleshooting
 - **DLL fails to load** ("No access to memory location"; fb2k falls back to the Default UI):
@@ -251,7 +258,10 @@ holds only what's true for both; anything repo-specific stays in the repo's own 
   to `foo_ui_panels.log` in the profile (INFO only with *Verbose logging*, 2 MB rotation to `.1`,
   session banner, 400-line ring kept for diagnostics even when not written); `log::console(level,…)`
   also prints "Panels UI: …" to the fb2k console — use it instead of `console::print`.
-  `log::guarded(tag, what, fn)` logs exceptions. `src/core/diagnostics.{h,cpp}` (SDK-free, tested)
+  `log::guarded(tag, what, fn)` logs exceptions. Lines written before `configure()` are kept
+  pending, INFO ones too, and filtered by the verbose setting when the file opens: the UI module
+  creates its window before `start_logging()`, and dropping INFO there lost `main window created`
+  on every session. `src/core/diagnostics.{h,cpp}` (SDK-free, tested)
   builds the Copy Diagnostics report (home dir → `~`, user name → `<user>`);
   `diagnostics_collect.cpp` fills it (`SkinEngine::describe`, installed components) and starts the
   log (`start_logging()`, from `initquit` and the first `load_skin`, whichever runs first — the UI
@@ -306,8 +316,13 @@ holds only what's true for both; anything repo-specific stays in the repo's own 
   `tools/setup_fooava.py` = the user-facing one-step wrapper (installer → skin folder, default
   `Documents/fooava`). Per-panel records are cut only at names some `$panel(name,` uses: stray
   length-prefixed bytes inside a script (e.g. `\x02\0\0\0ts`) otherwise split it (lost `ChronTIM`).
-- `tools/wclick.c` + `scripts/ui-test.sh` — drive the Wine foobar2000 UI (post clicks/keys/text
-  to the Panels UI windows, screenshot it, edit pvars in config.sqlite, restart with a DLL).
+- `scripts/ui-test.sh <wine|win11|mac> <scenario>` — one UI test driver for every platform
+  (see Shared conventions › Test environments): `smoke` turns verbose logging on
+  (`cfg_var.2F6C9A41-…` in configInts), deploys, relaunches and asserts the session banner,
+  `loading skin`, `main window created` (logged on both platforms), playback (`playback  new track`, INFO from the skin engine's play callback), no crash/ERROR,
+  screenshot; `compare` prints a step matrix across platforms. Wine helpers kept: `click`
+  (`tools/wclick.c`), `shot`, `pvars`, `restart`. Make: `ui`, `ui-smoke`, `ui-compare`,
+  `win11-smoke`, `mac-vm-smoke`. Win11 reads the guest log by pulling it over scp.
 
 ## Build (Arch Linux cross-compile)
 - Prereqs: `clang-cl`, `lld-link`, `cmake`, `ninja`; `cargo install xwin && xwin --accept-license --arch x86,x86_64,aarch64 splat --output ~/.xwin`.

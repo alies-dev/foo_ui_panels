@@ -3,6 +3,7 @@
 #include "../gfx/canvas.h"
 #include "../ui/view.h"
 #include "builtin_skin.h"
+#include "log.h"
 #include "button.h"
 #include "pvars.h"
 #include "script_runtime.h"
@@ -200,7 +201,10 @@ private:
     struct PlayEvents : play_callback_impl_base {
         explicit PlayEvents(SkinEngine* e);
         SkinEngine* m_e;
-        void on_playback_new_track(metadb_handle_ptr) override { m_e->repaint_all(); }
+        void on_playback_new_track(metadb_handle_ptr) override {
+            log::info("playback", "new track");
+            m_e->repaint_all();
+        }
         void on_playback_stop(play_control::t_stop_reason) override { m_e->repaint_all(); }
         void on_playback_seek(double) override { m_e->repaint_all(); }
         void on_playback_pause(bool) override { m_e->repaint_all(); }

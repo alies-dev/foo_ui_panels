@@ -68,7 +68,8 @@ void Logger::configure(const std::string& path, long maxBytes) {
     m_path = path;
     m_maxBytes = maxBytes > 0 ? maxBytes : kMaxBytes;
     rotate_if_needed(true);
-    for (const auto& l : m_pending) append(l);
+    for (const auto& [infoOnly, text] : m_pending)
+        if (!infoOnly || m_verbose) append(text);
     m_pending.clear();
 }
 
@@ -116,6 +117,7 @@ void Logger::write(Level level, const std::string& tag, const std::string& msg, 
         m_date = date;
         const std::string line = format_line(now, level, tag, thread_tag(), msg);
         if (toFile) emit(line, true);
+        else if (m_path.empty()) emit(line, true, true);
         else m_ring.push(line);
         if (console) sink = m_console;
     }
@@ -133,10 +135,10 @@ void Logger::reset_for_tests() {
     m_pending.clear();
 }
 
-void Logger::emit(const std::string& text, bool toRing) {
+void Logger::emit(const std::string& text, bool toRing, bool infoOnly) {
     if (toRing) m_ring.push(text);
     if (m_path.empty()) {
-        m_pending.push_back(text);
+        m_pending.emplace_back(infoOnly, text);
         if (m_pending.size() > kRingLines) m_pending.pop_front();
         return;
     }

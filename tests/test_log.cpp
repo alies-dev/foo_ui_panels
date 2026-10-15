@@ -61,6 +61,26 @@ TEST("log: lines before configure() are written once it is") {
     l.reset_for_tests();
 }
 
+TEST("log: info written before configure() follows the verbose setting given before it") {
+    log::Logger& l = log::Logger::get();
+    l.reset_for_tests();
+    log::info("ui", "early info");
+    l.set_verbose(true);
+    const std::string verbosePath = temp_log("pui_test_pending_verbose.log");
+    l.configure(verbosePath);
+    CHECK(read_file(verbosePath).find("early info") != std::string::npos);
+
+    l.reset_for_tests();
+    log::info("ui", "early quiet info");
+    log::warn("ui", "early warning");
+    const std::string quietPath = temp_log("pui_test_pending_quiet.log");
+    l.configure(quietPath);
+    const std::string quiet = read_file(quietPath);
+    CHECK(quiet.find("early quiet info") == std::string::npos);
+    CHECK(quiet.find("early warning") != std::string::npos);
+    l.reset_for_tests();
+}
+
 TEST("log: rotates past the size limit") {
     log::Logger& l = log::Logger::get();
     l.reset_for_tests();

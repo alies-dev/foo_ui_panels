@@ -3,6 +3,27 @@
 All notable changes to foo_ui_panels (Panels UI, reborn). Versions are the `v*` git tags; the
 GitHub release of each version has the downloadable `.fb2k-component`.
 
+## [1.11.1](https://github.com/santiagorod92/foo_ui_panels/compare/v1.11.0...v1.11.1) (2026-10-15)
+
+### Fixed
+- **Verbose log missed the start of every session**: with *Verbose logging* on, the INFO lines
+  written before the log file opened (the main window being created, among others) were
+  dropped. They are now kept until the file opens and written if verbose logging is on, so a
+  log attached to an issue shows the whole startup.
+- **macOS log**: the creation of the main window is logged on macOS too, like on Windows.
+- **Playback in the log**: each new track now writes an INFO line (`playback  new track`, no
+  file path), so a verbose log shows when playback started.
+
+### For contributors
+- **One UI test script for every platform**: `scripts/ui-test.sh <wine|win11|mac> <scenario>`
+  replaces the Wine-only driver and the screenshot-only VM targets. The `smoke` scenario turns
+  verbose logging on, deploys, relaunches and checks the session banner, the skin load, the
+  main window and playback, then that there's no crash report or ERROR line, and saves a
+  screenshot. `make ui-smoke`, `make win11-smoke`, `make mac-vm-smoke`.
+- **Compare platforms**: `make ui-compare ARGS='smoke'` runs a scenario on Wine, the Windows 11
+  VM and the macOS VM (`PARALLEL=1` at once) and prints a step matrix marking where they
+  differ. Wine's `click`, `shot`, `pvars` and `restart` helpers are kept (`make ui ARGS=…`).
+
 ## [1.11.0](https://github.com/santiagorod92/foo_ui_panels/compare/v1.10.0...v1.11.0) (2026-10-12)
 
 ### Highlights
