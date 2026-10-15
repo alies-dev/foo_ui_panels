@@ -1,5 +1,5 @@
 .PHONY: help build build-arm64ec build-x86 deploy launch run kill clean check-portable test skin-lint docs mac-build mac-vm mac-vm-open mac-vm-test mac-vm-skin mac-vm-navidrome mac-vm-navidrome-config \
-	ui win11 win11-open win11-test win11-release win11-skin
+	ui ui-smoke ui-compare mac-vm-smoke win11-smoke win11 win11-open win11-test win11-release win11-skin
 
 help:
 	@echo "foo_ui_panels — make targets"
@@ -17,13 +17,16 @@ help:
 	@echo "  skin-lint       build build/tools/skin_lint; LINT_DIR=<folder> also runs it on that skin"
 	@echo "  docs            regenerate docs/SCRIPT_FUNCTIONS.md from the engine's function table"
 	@echo "  mac-build       build the macOS bundle (build-mac/foo_ui_panels.component, universal)"
-	@echo "  ui              drive the Wine Panels UI: ARGS='click X Y' / 'shot FILE.png' / 'restart' (scripts/ui-test.sh)"
+	@echo "  ui              scripts/ui-test.sh wine ARGS='smoke' / 'click X Y' / 'shot FILE.png' / 'pvars k=v' / 'restart' / 'log 50'"
+	@echo "  ui-smoke        UI smoke test in the local Wine foobar2000 (deploys build/foo_ui_panels.dll): skin, window, playback, log"
+	@echo "  ui-compare      same UI scenario on several platforms + a step matrix: ARGS='smoke' (default wine win11 mac), PARALLEL=1 at once"
 	@echo ""
 	@echo "  macOS VM (sibling ../macos-devbox, mvm — one-time setup in its README):"
 	@echo "  mac-vm          boot the VM, open its screen (VNC) in the browser, then mac-vm-test (VNC=0: no browser)"
 	@echo "  mac-vm-open     open the VM screen (noVNC) in the browser once macOS has booted"
 	@echo "  mac-vm-test     mac-build, deploy the bundle into the VM, relaunch foobar2000, screenshot"
 	@echo "  mac-vm-skin     copy skins/\$$SKIN (default: the only/first one), or SKIN_DIR=<folder>, into the guest's skin folder"
+	@echo "  mac-vm-smoke    mac-build, then the UI smoke test in the VM (scripts/ui-test.sh mac smoke)"
 	@echo "  mac-vm-navidrome         install foo_navidrome in the VM: latest release, NAVIDROME=v1.18.0 (tag)"
 	@echo "                           or NAVIDROME=path/to.fb2k-component"
 	@echo "  mac-vm-navidrome-config  copy foo_navidrome's settings (server, login, custom headers) from the"
@@ -34,6 +37,7 @@ help:
 	@echo "  win11           boot the VM, open its screen (VNC) in the browser, then win11-test (VNC=0: no browser)"
 	@echo "  win11-open      open the VM screen (noVNC) in the browser once the container's viewer answers"
 	@echo "  win11-test      build, deploy the DLL + skins/\$$SKIN into the VM, relaunch foobar2000, screenshot"
+	@echo "  win11-smoke     build, then the UI smoke test on real Windows (scripts/ui-test.sh win11 smoke)"
 	@echo "  win11-release   deploy a GitHub release [TAG=v1.6.0, default latest] + the skin, relaunch"
 	@echo "  win11-skin      copy skins/\$$SKIN, or SKIN_DIR=<folder>, into the guest's component folder (default skin dir)"
 	@echo "  win11-<cmd>     any wvm command: win11-shot, -ssh, -down, -theme ARGS=dark, -dpi ARGS=144, -click ARGS='x y', ..."
@@ -137,7 +141,19 @@ mac-vm-%:
 	$(MVM) $* $(ARGS)
 
 ui:
-	./scripts/ui-test.sh $(ARGS)
+	./scripts/ui-test.sh wine $(ARGS)
+
+ui-smoke: build
+	./scripts/ui-test.sh wine smoke
+
+ui-compare:
+	./scripts/ui-test.sh compare $(ARGS)
+
+mac-vm-smoke: mac-build
+	./scripts/ui-test.sh mac smoke
+
+win11-smoke: build
+	./scripts/ui-test.sh win11 smoke
 
 WVM ?= $(abspath ../windows-devbox/wvm)
 WVM_ENV = $(dir $(WVM))wvm.env

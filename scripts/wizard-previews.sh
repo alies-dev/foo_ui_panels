@@ -31,7 +31,7 @@ mkdir -p "$(dirname "$TOOL")"
 hyprctl eval 'hl.window_rule({ match = { class = "^foobar2000\\.exe$" }, tag = "-default-opacity", opacity = "1 1" })' >/dev/null 2>&1 || true
 fb2k() { wine "$FB/foobar2000.exe" "$@" </dev/null >/dev/null 2>&1; }
 stop_fb2k() {
-  "$UI" click 0 0 close </dev/null >/dev/null 2>&1 || true
+  "$UI" wine click 0 0 close </dev/null >/dev/null 2>&1 || true
   for _ in $(seq 1 20); do pgrep -x foobar2000.exe >/dev/null || return 0; sleep 0.5; done
   pkill -x foobar2000.exe || true; sleep 1
 }
@@ -84,7 +84,7 @@ while IFS=$'\t' read -r id dir; do
   fb2k & sleep 7
   fb2k /play & sleep 1
   sleep "$WAIT"
-  "$UI" shot "$DEMO/$id.png" </dev/null
+  "$UI" wine shot "$DEMO/$id.png" </dev/null
   magick "$DEMO/$id.png" -filter Lanczos -resize "$OUT!" -strip -define png:compression-level=9 "$REPO/res/wizard/$id.png"
   echo "res/wizard/$id.png ($(stat -c %s "$REPO/res/wizard/$id.png") bytes)"
   stop_fb2k
