@@ -5,14 +5,14 @@ Usage: scripts/mac-build.sh
 Builds the macOS component bundle (universal arm64 + x86_64) -> build-mac/foo_ui_panels.component.
 On Linux it cross-compiles with clang + ld64.lld against MACOS_SDK (default
 ~/.macos-sdk/MacOSX.sdk, see scripts/extract-macos-sdk.py); on a Mac it uses the native tools.
-  SDK_ROOT=/path   parent of foobar2000/ + pfc/ (default: the checkout's parent)
+  SDK_ROOT=/path   parent of foobar2000/ + pfc/ (default: see scripts/toolchain.sh)
 USAGE
 }
 case "${1:-}" in -h|--help) usage; exit 0 ;; esac
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
-SDK_ROOT="${SDK_ROOT:-$(cd .. && pwd)}"
+. scripts/toolchain.sh
 OUT=build-mac/foo_ui_panels.component
 for arch in arm64 x86_64; do
   if [ "$(uname)" = Darwin ]; then

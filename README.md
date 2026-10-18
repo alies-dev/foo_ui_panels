@@ -330,7 +330,9 @@ things smooth:
   (also run in CI) verifies the core compiles without Windows headers.
 - Both builds should pass: `./build.sh` (Windows) and `./scripts/mac-build.sh` (macOS) — CI
   checks both on every PR.
-- `make test` runs the unit tests (`tests/`, host compiler, under ASan/UBSan — also in CI). They
+- `make test` runs the unit tests (`tests/`, host compiler, under ASan/UBSan — also in CI on
+  Linux and macOS). `make win-test` (Linux, wine) and `make win11-arm-test` (Mac, Windows 11 ARM
+  VM) build the same suite for Windows, which is where the `_WIN32` file-access paths run. They
   cover the parts of the engine that don't need foobar2000: the script functions themselves
   (against a recording canvas), script/config parsing, `$eval`, menu action matching, LRC/lrclib
   parsing, playlist reordering, the native panels' layout/scrolling/keyboard logic
@@ -393,12 +395,19 @@ point it at a skin folder (see [Installation](#installation) and
 run `make run` again. `make launch` restarts foobar2000 without rebuilding, and
 `make skin-lint LINT_DIR=<skin folder>` checks a skin without running foobar2000.
 
-**macOS:**
+**macOS** (Apple Silicon or Intel; Xcode's command line tools are enough):
 
 ```sh
-make test
+brew install cmake ninja llvm lld xwin                       # once; llvm/lld/xwin only for the Windows builds
+make test        # unit tests (host clang, ASan/UBSan)
 make mac-build   # build-mac/foo_ui_panels.component (universal)
+make build       # the Windows DLL too (make build-arm64ec for Windows on ARM)
 ```
+
+`scripts/toolchain.sh` finds the inputs every build and test script uses: the SDK next to the
+checkout or, failing that, the copy foo_navidrome keeps in `~/.local/share/foo_navidrome-sdk`;
+xwin in `~/.xwin` or `~/.local/share/xwin/sdk`; Homebrew's clang-cl and lld-link on macOS. Run
+it on its own to see what it picked.
 
 With foobar2000 quit, copy the bundle to
 `~/Library/foobar2000-v2/user-components/foo_ui_panels/foo_ui_panels.component`, start
@@ -430,6 +439,18 @@ make mac-vm-test               # mac-build, deploy the bundle into the VM, relau
 make mac-vm-skin SKIN=fooava   # copy a skin from skins/ into the guest
 make mac-vm-navidrome          # install foo_navidrome there (latest release) ...
 make mac-vm-navidrome-config   # ... and copy its server settings from the local Wine profile
+```
+
+**Windows 11 ARM on an Apple Silicon Mac.** The VM foo_navidrome sets up (QEMU with Apple's
+hypervisor, `../foo_navidrome/scripts/win11-arm.sh`; one-time install and provisioning in
+foo_navidrome's README) runs this repo too, with the same target names:
+
+```sh
+make win11-arm                 # start the VM and open its screen in the browser
+make win11-arm-test            # unit tests built for Windows, run in the guest
+make win11-arm-deploy          # build ARM64EC, install it (+ skins/$SKIN) in the guest, restart, screenshot
+make win11-arm-deploy ARCH=x64 # the x64 build instead (foobar2000 for ARM runs it emulated)
+make win11-arm-status          # any win11-arm.sh command: -down, -shot, -ssh, -fb2k ARGS='log 60 ERROR', ...
 ```
 
 In the Windows guest, pick **Panels UI (reborn)** as the user interface module once and then

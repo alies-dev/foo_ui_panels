@@ -20,7 +20,9 @@ lands on BOTH platforms, all builds + CI legs green, release zip = `mac/` bundle
   (2) both builds; (3) runtime on Windows in the local Wine foobar2000 (`make deploy`,
   `scripts/ui-test.sh` to click/type/screenshot); (4) runtime on macOS in the VM
   (`make mac-vm` / `make mac-vm-test`, `mvm click|key|shot`); real Windows 11 (`make win11-test`)
-  when the change touches theming, DPI or native controls. Exercise the changed feature
+  when the change touches theming, DPI or native controls. On an Apple Silicon Mac host the same
+  round is `make test`, `make mac-build`, `make build`, then `make win11-arm-test` (the unit
+  tests on real Windows) and `make win11-arm-deploy` in the Windows 11 ARM VM. Exercise the changed feature
   itself, not just "it loads". Anything that couldn't be checked (and why) goes in the PR.
 - macOS integration: a `user_interface` module ("Panels UI (reborn)", Preferences › Display —
   verified in the VM) owning its window, plus a `ui_element_mac` layout element ("Panels UI").
@@ -149,6 +151,11 @@ holds only what's true for both; anything repo-specific stays in the repo's own 
 - **macOS VM:** `../macos-devbox` (`mvm`, dockur/macos, Intel guest). **Windows 11 VM:**
   `../windows-devbox` (`wvm`, dockur/windows), for Dark Mode, DPI and native theming that Wine
   fakes. Never `docker prune`/`rm`/`rmi`.
+- **Windows 11 ARM VM (Apple Silicon Mac):** foo_navidrome's `scripts/win11-arm.sh` (QEMU +
+  HVF, launchd jobs). Both repos drive it with the same `make win11-arm*` targets; foo_ui_panels
+  points at `../foo_navidrome/scripts/win11-arm.sh` (`WIN11_ARM=`). `deploy <dll>` installs into
+  `user-components-arm64ec/<dll name>`, `push` copies a folder in, `COMPONENT=` picks the log
+  `fb2k log` reads, `make win11-arm-test` runs each repo's unit tests in the guest.
 - **UI tests:** both repos drive the real foobar2000 with one script,
   `scripts/ui-test.sh <wine|win11|mac> <scenario>`: each scenario is written once over a small
   per-platform driver and asserts on the component log, the process and crash reports.
@@ -254,7 +261,12 @@ holds only what's true for both; anything repo-specific stays in the repo's own 
   `CoverFlow` — panels keep only fb2k + drawing calls), `prefs_model` (+ `prefs_text` wording,
   picker lists), `builtin_skin`, `skin_templates` (layout wizard + its built-in layouts), `script_runtime` (+ `pvars.h`), `skin_lint`. Panel type → kind is `panel_kind()` (script_util).
   `make test` compiles them WITHOUT the SDK include path — never `#include "../fb2k.h"` there;
-  new pure logic goes in one of these (or a new SDK-free file added to `TEST_SRC`) with a test.
+  new pure logic goes in one of these (or a new SDK-free file added to `SRC` in
+  `scripts/run-unit-tests.sh`, the one list every mode builds) with a test. The Windows modes
+  (`make win-test`, `make win11-arm-test`) are the only ones that compile `fs_util.h`'s `_WIN32`
+  paths; tests that read repo files (`tests/golden`, `docs/`, `res/wizard`) use repo-relative
+  paths, so the guest run copies those folders next to the exe, and a test comparing a path
+  built by the code expects `kPathSep`, not `/` (it failed only on Windows until 2026-10-18).
 - Golden render tests (`tests/test_render_golden.cpp`): scripts run via `tests/mini_titleformat.h`
   (test-only titleformat subset) and every canvas op compared with `tests/golden/*.txt`;
   `UPDATE_GOLDEN=1 make test` regenerates. `tests/skins/synthetic` must call every script function
@@ -374,7 +386,7 @@ holds only what's true for both; anything repo-specific stays in the repo's own 
   path filters), parallel jobs: `build` matrix (x64 / arm64ec / x86, one `build.sh` each, ccache
   per arch via `setup-build`'s `ccache-key`, persisted with `actions/cache`), `test`
   (`check-portable` + `make test` + skin-lint, `setup-build` with `xwin: false`) and `build-mac`
-  (universal bundle, uploaded as a `ditto` zip). On a push to main that will release (same
+  (`make test` on macOS, then the universal bundle, uploaded as a `ditto` zip). On a push to main that will release (same
   head-commit gate as Release) a `version` job runs `semantic-release --dry-run` first
   (`verifyReleaseCmd` → `next_version`) and every build is stamped with it (`PUI_VERSION`, also
   `version.sh --base` for the mac Info.plist) + a `release-stamp` artifact.

@@ -63,7 +63,7 @@ TEST("templates: installed as a skin folder, never over an existing one, and lin
         std::string err;
         const std::string dir = install_skin_template(t, tmp.dir + "/skins", &err);
         CHECK(err.empty());
-        CHECK_EQ(dir, tmp.dir + "/skins/" + t.name);
+        CHECK_EQ(dir, tmp.dir + "/skins" + kPathSep + t.name);
         CHECK_EQ(read_file(dir + "/main.txt"), t.script);
         CHECK_EQ(read_file(dir + "/" + SkinConfig::kFileName), t.ini);
         for (auto& f : lint_skin(dir))
@@ -71,6 +71,6 @@ TEST("templates: installed as a skin folder, never over an existing one, and lin
     }
     const SkinTemplate& first = skin_templates().front();
     write_file(tmp.dir + "/skins/" + first.name + "/main.txt", "edited");
-    CHECK_EQ(install_skin_template(first, tmp.dir + "/skins"), tmp.dir + "/skins/" + first.name + " 2");
+    CHECK_EQ(install_skin_template(first, tmp.dir + "/skins"), tmp.dir + "/skins" + kPathSep + first.name + " 2");
     CHECK_EQ(read_file(tmp.dir + "/skins/" + first.name + "/main.txt"), std::string("edited"));
 }

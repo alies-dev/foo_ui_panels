@@ -1,5 +1,6 @@
 .PHONY: help build build-arm64ec build-x86 deploy launch run kill clean check-portable test skin-lint docs mac-build mac-vm mac-vm-open mac-vm-test mac-vm-skin mac-vm-navidrome mac-vm-navidrome-config \
-	ui ui-smoke ui-compare mac-vm-smoke win11-smoke win11 win11-open win11-test win11-release win11-skin
+	ui ui-smoke ui-compare mac-vm-smoke win11-smoke win11 win11-open win11-test win11-release win11-skin \
+	win-test win11-arm win11-arm-deploy win11-arm-skin win11-arm-test
 
 help:
 	@echo "foo_ui_panels — make targets"
@@ -13,7 +14,8 @@ help:
 	@echo "  kill      kill any running foobar2000.exe (Wine)"
 	@echo "  clean     remove build/, build-arm64ec/, build-x86/ and build-mac/"
 	@echo "  check-portable  compile the platform-free sources (core/panels) for a non-Windows host"
-	@echo "  test            build + run the host-side unit tests (tests/, ASan/UBSan)"
+	@echo "  test            build + run the host-side unit tests (tests/, ASan/UBSan; Linux and macOS)"
+	@echo "  win-test        the same unit tests built for Windows with clang-cl, run under wine (Linux)"
 	@echo "  skin-lint       build build/tools/skin_lint; LINT_DIR=<folder> also runs it on that skin"
 	@echo "  docs            regenerate docs/SCRIPT_FUNCTIONS.md from the engine's function table"
 	@echo "  mac-build       build the macOS bundle (build-mac/foo_ui_panels.component, universal)"
@@ -40,6 +42,13 @@ help:
 	@echo "  win11-smoke     build, then the UI smoke test on real Windows (scripts/ui-test.sh win11 smoke)"
 	@echo "  win11-release   deploy a GitHub release [TAG=v1.6.0, default latest] + the skin, relaunch"
 	@echo "  win11-skin      copy skins/\$$SKIN, or SKIN_DIR=<folder>, into the guest's component folder (default skin dir)"
+	@echo ""
+	@echo "  Windows 11 ARM VM on an Apple Silicon Mac (../foo_navidrome/scripts/win11-arm.sh, set up from foo_navidrome):"
+	@echo "  win11-arm         start the VM and open its screen (VNC=0: no browser)"
+	@echo "  win11-arm-deploy  build ARCH=arm64ec (default) or x64, install the DLL + skins/\$$SKIN in the guest, restart foobar2000, screenshot"
+	@echo "  win11-arm-skin    copy skins/\$$SKIN, or SKIN_DIR=<folder>, into the guest's component folder"
+	@echo "  win11-arm-test    unit tests built for Windows, run in the guest"
+	@echo "  win11-arm-<cmd>   any win11-arm.sh command: -up, -down, -status, -shot, -ssh, -fb2k ARGS=start, -fb2k ARGS='log 60 ERROR', ..."
 	@echo "  win11-<cmd>     any wvm command: win11-shot, -ssh, -down, -theme ARGS=dark, -dpi ARGS=144, -click ARGS='x y', ..."
 
 build:
@@ -66,20 +75,18 @@ kill:
 clean:
 	rm -rf build build-arm64ec build-x86 build-mac
 
-SDK_ROOT ?= $(abspath ..)
+SDK_ROOT ?= $(shell ./scripts/toolchain.sh | sed -n 's/^SDK_ROOT=//p')
 CXX_HOST ?= clang++
 check-portable:
 	@set -e; for f in src/core/*.cpp src/panels/*.cpp; do \
 	  $(CXX_HOST) -std=c++20 -fsyntax-only -DNDEBUG -isystem $(SDK_ROOT) -isystem $(SDK_ROOT)/foobar2000 $$f; \
 	done; echo "portable: ok"
 
-TEST_SRC = $(wildcard tests/*.cpp) src/core/script_util.cpp src/core/lyrics_parse.cpp src/core/skin_config.cpp src/core/ui_logic.cpp src/core/script_runtime.cpp src/core/skin_lint.cpp src/core/prefs_model.cpp src/core/list_logic.cpp src/core/builtin_skin.cpp src/core/skin_templates.cpp src/core/log.cpp src/core/diagnostics.cpp
-TEST_BIN = build/tests/run_tests
 test:
-	@mkdir -p $(dir $(TEST_BIN))
-	$(CXX_HOST) -std=c++20 -g -O1 -Wall -Wextra -fsanitize=address,undefined -fno-omit-frame-pointer \
-	  -Isrc $(TEST_SRC) -o $(TEST_BIN)
-	./$(TEST_BIN)
+	CXX_HOST=$(CXX_HOST) ./scripts/run-unit-tests.sh host
+
+win-test:
+	./scripts/run-unit-tests.sh win
 
 LINT_SRC = tools/skin_lint.cpp src/core/script_runtime.cpp src/core/script_util.cpp src/core/skin_config.cpp src/core/skin_lint.cpp
 LINT_BIN = build/tools/skin_lint
@@ -193,5 +200,38 @@ win11-skin:
 	  $(WVM) ps "Copy-Item -Recurse -Force \"\$$HOME\\AppData\\Local\\Temp\\pui-skin\\*\" \"\$$HOME\\$(subst /,\\,$(WIN_COMPONENT_DIR))\"; Remove-Item -Recurse -Force \"\$$HOME\\AppData\\Local\\Temp\\pui-skin\""
 	$(WVM) fb2k start
 
+WIN11_ARM ?= $(abspath ../foo_navidrome/scripts/win11-arm.sh)
+WIN11_ARM_COMPONENT_DIR = AppData/Roaming/foobar2000-v2/user-components-arm64ec/foo_ui_panels
+
+win11-arm:
+	$(WIN11_ARM) up
+	@if [ "$(VNC)" != 0 ]; then $(WIN11_ARM) open; fi
+
+ARCH ?= arm64ec
+WIN11_ARM_DLL = $(if $(filter x64,$(ARCH)),build,build-$(ARCH))/foo_ui_panels.dll
+
+win11-arm-deploy:
+	WIN_ARCH=$(ARCH) ./build.sh
+	$(WIN11_ARM) deploy $(WIN11_ARM_DLL)
+	@if [ -d "$(SKIN_DIR)" ]; then $(MAKE) --no-print-directory win11-arm-skin; fi
+	@sleep 8; $(WIN11_ARM) shot $(CURDIR)/build/ui-test/win11-arm-$(ARCH).png
+
+win11-arm-skin:
+	@test -d "$(SKIN_DIR)" || { echo "no skin — put one in skins/<name>, or pass SKIN=<name> / SKIN_DIR=<folder>"; exit 1; }
+	@stage=$$(mktemp -d); trap 'rm -rf "$$stage"' EXIT; \
+	  mkdir -p "$$stage/foo_ui_panels"; \
+	  tar -C "$(SKIN_DIR)" --exclude=./dlls --exclude=./components --exclude='*.dll' --exclude='*.bak' -cf - . | tar -C "$$stage/foo_ui_panels" -xf -; \
+	  cp $(WIN11_ARM_DLL) "$$stage/foo_ui_panels/" 2>/dev/null || true; \
+	  $(WIN11_ARM) fb2k stop; \
+	  $(WIN11_ARM) push "$$stage/foo_ui_panels" "$(dir $(WIN11_ARM_COMPONENT_DIR))"
+	$(WIN11_ARM) fb2k start
+
+win11-arm-test:
+	WIN11_ARM=$(WIN11_ARM) ./scripts/run-unit-tests.sh win11-arm
+
+win11-arm-%:
+	COMPONENT=foo_ui_panels $(WIN11_ARM) $* $(ARGS)
+
 win11-%:
 	$(WVM) $* $(ARGS)
+

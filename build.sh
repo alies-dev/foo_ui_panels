@@ -2,14 +2,14 @@
 usage() {
   cat <<'USAGE'
 Usage: ./build.sh
-Cross-builds foo_ui_panels.dll (Windows) on Linux with clang-cl + lld-link + xwin.
+Cross-builds foo_ui_panels.dll (Windows) on Linux or macOS with clang-cl + lld-link + xwin.
   WIN_ARCH=x64      (default) -> build/foo_ui_panels.dll
   WIN_ARCH=arm64ec  Windows on ARM, native -> build-arm64ec/foo_ui_panels.dll
   WIN_ARCH=x86      32-bit foobar2000 -> build-x86/foo_ui_panels.dll
-  SDK_ROOT=/path    parent of foobar2000/{SDK,shared,...} + pfc/ (default: the checkout's parent;
+  SDK_ROOT=/path    parent of foobar2000/{SDK,shared,...} + pfc/ (default: see scripts/toolchain.sh;
                     fetched from reupen/foobar2000-sdk-unmodified when missing)
-  XWIN=/path        xwin splat (default ~/.xwin)
-Prereqs: clang-cl, lld-link, cmake, ninja, and
+  XWIN=/path        xwin splat (default: see scripts/toolchain.sh)
+Prereqs: clang-cl, lld-link, cmake, ninja (macOS: brew install llvm lld cmake ninja xwin), and
   cargo install xwin && xwin --accept-license --arch x86,x86_64,aarch64 splat --output ~/.xwin
 USAGE
 }
@@ -18,9 +18,7 @@ case "${1:-}" in -h|--help) usage; exit 0 ;; esac
 set -euo pipefail
 cd "$(dirname "$0")"
 
-SDK_ROOT="${SDK_ROOT:-$(cd .. && pwd)}"
-XWIN="${XWIN:-$HOME/.xwin}"
-export XWIN
+. scripts/toolchain.sh
 WIN_ARCH="${WIN_ARCH:-x64}"
 case "$WIN_ARCH" in
   x64) BUILD_DIR=build ;;
