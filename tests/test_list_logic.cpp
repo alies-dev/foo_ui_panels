@@ -256,6 +256,21 @@ TEST("album_view: filter and sort orders") {
     CHECK(album_view(all, AlbumSort::Year, "zeppelin").empty());
 }
 
+TEST("album_view: decade sort keeps artist order inside a decade") {
+    std::vector<AlbumKeys> all = {
+        { "ABBA", "Waterloo", "1974", "" },
+        { "Blur", "Parklife", "1994", "" },
+        { "Blur", "Blur", "", "" },
+        { "Cake", "Fashion Nugget", "1996", "" },
+        { "Cake", "Motorcade of Generosity", "1994", "" },
+        { "Kraftwerk", "Autobahn", "1974", "" },
+    };
+    auto v = album_view(all, AlbumSort::Decade, "");
+    CHECK(v == std::vector<size_t>({ 1, 3, 4, 0, 5, 2 }));
+    v = album_view(all, AlbumSort::Decade, "cake");
+    CHECK(v == std::vector<size_t>({ 3, 4 }));
+}
+
 TEST("playlist header: columns follow the row layout") {
     auto cols = playlist_header_columns(400, true);
     CHECK_EQ(cols.size(), (size_t)4);

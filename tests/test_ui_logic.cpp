@@ -79,7 +79,7 @@ TEST("filter_matches: every word, case-insensitive") {
 }
 
 TEST("album_sort_from / album_sort_name round-trip") {
-    for (AlbumSort s : { AlbumSort::Artist, AlbumSort::Album, AlbumSort::Year, AlbumSort::Added })
+    for (AlbumSort s : { AlbumSort::Artist, AlbumSort::Album, AlbumSort::Year, AlbumSort::Decade, AlbumSort::Added })
         CHECK(album_sort_from(album_sort_name(s)) == s);
     CHECK(album_sort_from("") == AlbumSort::Artist);
     CHECK(album_sort_from("YEAR") == AlbumSort::Year);

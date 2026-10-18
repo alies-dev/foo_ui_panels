@@ -104,6 +104,7 @@ AlbumSort album_sort_from(const std::string& s) {
     const std::string l = lower(s);
     if (l == "album") return AlbumSort::Album;
     if (l == "year") return AlbumSort::Year;
+    if (l == "decade") return AlbumSort::Decade;
     if (l == "added") return AlbumSort::Added;
     return AlbumSort::Artist;
 }
@@ -112,6 +113,7 @@ const char* album_sort_name(AlbumSort s) {
     switch (s) {
     case AlbumSort::Album: return "album";
     case AlbumSort::Year: return "year";
+    case AlbumSort::Decade: return "decade";
     case AlbumSort::Added: return "added";
     default: return "artist";
     }
@@ -132,6 +134,11 @@ std::vector<size_t> album_view(const std::vector<AlbumKeys>& all, AlbumSort sort
     case AlbumSort::Year:
         std::stable_sort(v.begin(), v.end(), [&](size_t a, size_t b) { return newest(all[a].year, all[b].year); });
         break;
+    case AlbumSort::Decade: {
+        auto decade = [](const std::string& y) { return y.size() >= 4 ? y.substr(0, 3) : std::string(); };
+        std::stable_sort(v.begin(), v.end(), [&](size_t a, size_t b) { return newest(decade(all[a].year), decade(all[b].year)); });
+        break;
+    }
     case AlbumSort::Added:
         std::stable_sort(v.begin(), v.end(), [&](size_t a, size_t b) { return newest(all[a].added, all[b].added); });
         break;

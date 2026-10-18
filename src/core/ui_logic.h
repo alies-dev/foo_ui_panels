@@ -25,7 +25,7 @@ MiniPlan mini_mode_plan(int curW, int curH, int miniW, int miniH, int savedW, in
 
 bool filter_matches(const std::string& filter, const std::string& text);
 
-enum class AlbumSort { Artist, Album, Year, Added };
+enum class AlbumSort { Artist, Album, Year, Decade, Added };
 AlbumSort album_sort_from(const std::string& s);
 const char* album_sort_name(AlbumSort s);
 

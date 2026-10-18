@@ -235,7 +235,7 @@ it, a skin gets neutral defaults. Edits are picked up live, like script edits.
 - The Preferences page follows foobar2000's **Dark Mode** (Preferences › Display › Default User
   Interface; on *Auto* it tracks Windows' app theme live, also with Panels UI as the UI module).
 - Album browser / cover flow: type to search by artist or album (Backspace edits, Esc clears),
-  right-click empty space to sort by artist, album, year or recently added (remembered), arrow
+  right-click empty space to sort by artist, album, year, decade or recently added (remembered), arrow
   keys / Page Up/Down / Home/End move through the grid.
 - The Album Art panel cross-fades to the new cover on a track change.
 - Right-click the now-playing cover (the Album Art panel, or the panel a skin draws its cover

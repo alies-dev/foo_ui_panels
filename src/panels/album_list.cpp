@@ -455,7 +455,7 @@ void AlbumList::on_rclick(int x, int y) {
     host()->focus();
     int idx = item_at(x, y);
     if (idx < 0) {
-        enum { kArtist = 1, kAlbum, kYear, kAdded, kClear, kRefresh };
+        enum { kArtist = 1, kAlbum, kYear, kDecade, kAdded, kClear, kRefresh };
         auto item = [](const char* label, int id, bool checked = false, bool enabled = true) {
             ui::MenuItem m; m.label = label; m.id = id; m.checked = checked; m.enabled = enabled; return m;
         };
@@ -463,6 +463,7 @@ void AlbumList::on_rclick(int x, int y) {
         sort.children = { item("Artist", kArtist, m_sort == AlbumSort::Artist),
                           item("Album", kAlbum, m_sort == AlbumSort::Album),
                           item("Year (newest first)", kYear, m_sort == AlbumSort::Year),
+                          item("Decade (newest first)", kDecade, m_sort == AlbumSort::Decade),
                           item("Recently added", kAdded, m_sort == AlbumSort::Added) };
         ui::Menu menu = { sort, ui::MenuItem::sep(),
                           item(m_filter.empty() ? "Type to search" : "Clear search (Esc)", kClear, false, !m_filter.empty()),
@@ -471,6 +472,7 @@ void AlbumList::on_rclick(int x, int y) {
         case kArtist: set_sort(AlbumSort::Artist); break;
         case kAlbum: set_sort(AlbumSort::Album); break;
         case kYear: set_sort(AlbumSort::Year); break;
+        case kDecade: set_sort(AlbumSort::Decade); break;
         case kAdded: set_sort(AlbumSort::Added); break;
         case kClear: set_filter(""); break;
         case kRefresh: rebuild(); break;
