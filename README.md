@@ -448,6 +448,7 @@ VNC input.
 
 ```sh
 make ui-smoke                              # Wine: deploy, relaunch, skin + window + playback, log checks
+make ui ARGS=solo                          # the same with foo_navidrome moved out of the profile (restored after)
 make win11-smoke / make mac-vm-smoke       # the same scenario on real Windows 11 / the macOS VM
 make ui-compare ARGS='smoke'               # all three, step matrix marking where they differ (PARALLEL=1: at once)
 make ui ARGS='restart'                     # graceful close, install build/ DLL, relaunch + play

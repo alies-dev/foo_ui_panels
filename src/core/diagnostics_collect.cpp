@@ -45,11 +45,18 @@ std::vector<std::string> installed_components() {
     return out;
 }
 
+bool navidrome_installed() {
+    const auto components = installed_components();
+    return std::any_of(components.begin(), components.end(),
+                       [](const std::string& c) { return c.find("foo_navidrome") != std::string::npos; });
+}
+
 std::string session_summary() {
     const std::string wine = ui::wine_version();
     return std::string("foo_ui_panels ") + PUI_VERSION + " (" + build_arch() + ") on " +
            core_version_info::g_get_version_string() + ", " + platform_name() + " " + ui::os_version() +
-           (wine.empty() ? "" : ", Wine " + wine) + ", verbose=" + (verbose_logging() ? "on" : "off");
+           (wine.empty() ? "" : ", Wine " + wine) + ", verbose=" + (verbose_logging() ? "on" : "off") +
+           ", navidrome=" + (navidrome_installed() ? "yes" : "no");
 }
 
 class LogInit : public initquit {
@@ -94,8 +101,7 @@ std::string collect_diagnostics() {
     d.verboseLogging = verbose_logging();
     for (const auto& [k, v] : load_all_pvars()) if (!k.empty() && k[0] != '_') ++d.pvarCount;
     d.components = installed_components();
-    d.navidrome = std::any_of(d.components.begin(), d.components.end(),
-                              [](const std::string& c) { return c.find("foo_navidrome") != std::string::npos; });
+    d.navidrome = navidrome_installed();
     d.logPath = log::Logger::get().path();
     log::info("env", "diagnostics collected: " + std::to_string(d.playerWindows) + " player window(s), " +
                          std::to_string(d.panels.size()) + " panel(s)");

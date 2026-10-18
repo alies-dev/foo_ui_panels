@@ -17,6 +17,9 @@ Scenarios
   smoke [ARTIFACT]   turn verbose logging on, deploy, relaunch; assert the session banner, the
                      skin load, the main window, start playback, then no crash report, no ERROR
                      line, screenshot; the skin's own warnings are recorded as notes
+  solo [ARTIFACT]    the sister component (SIBLING, default foo_navidrome) moved out of
+                     user-components for the run (restored after): the smoke steps, plus the
+                     session banner must report navidrome=no; Panels UI must work without it
 
 ARTIFACT: what gets deployed first. wine, win11: a DLL (default build/foo_ui_panels.dll; win11
 also re-copies skins/$SKIN like make win11-skin); mac: a .component (default
@@ -42,6 +45,14 @@ set -uo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 SHOTS="$REPO/build/ui-test"
 VERBOSE_KEY='cfg_var.2F6C9A41-7D3E-4B58-91A7-0C5E3B82D416'
+SIBLING="${SIBLING:-foo_navidrome}"
+
+CLEANUPS=()
+on_exit() { CLEANUPS+=("$1"); trap run_cleanups EXIT; }
+run_cleanups() {
+  local i
+  for (( i = ${#CLEANUPS[@]} - 1; i >= 0; i-- )); do eval "${CLEANUPS[$i]}" >/dev/null 2>&1 || true; done
+}
 
 say()  { printf '\033[1;36m==> %s\033[0m\n' "$*"; }
 ok()   { printf '\033[1;32m  ok\033[0m %s\n' "$*"; record ok "$*"; }
@@ -91,6 +102,19 @@ wine_deploy() {
   say "deploy $(basename "$dll")"
   wine_stop
   cp -f "$dll" "$PROFILE/user-components-x64/foo_ui_panels/foo_ui_panels.dll"
+}
+wine_sibling_disable() {
+  wine_stop
+  local on="$PROFILE/user-components-x64/$1" off="$PROFILE/.solo-off-$1"
+  [ -d "$off" ] && [ ! -d "$on" ] && return 0
+  [ -d "$on" ] || return 1
+  mv "$on" "$off"
+}
+wine_sibling_enable() {
+  wine_stop
+  local on="$PROFILE/user-components-x64/$1" off="$PROFILE/.solo-off-$1"
+  [ -d "$off" ] && [ ! -d "$on" ] && mv "$off" "$on"
+  return 0
 }
 wine_play() { foobar2000 -play >/dev/null 2>&1 & }
 wine_log_size() { wc -c < "$LOG" 2>/dev/null || echo 0; }
@@ -147,6 +171,18 @@ win11_cfg_sql() {
   case "$1" in SELECT*) ;; *) "$WVM" push "$tmp/config.sqlite" "$GUEST_PROFILE" >/dev/null ;; esac
   rm -rf "$tmp"
 }
+win11_sibling_disable() {
+  win11_stop
+  "$WVM" ps "\$base = \"\$env:APPDATA\\foobar2000-v2\"; \$on = \"\$base\\user-components-x64\\$1\"; \$off = \"\$base\\.solo-off-$1\";
+    if ((Test-Path \$off) -and -not (Test-Path \$on)) { exit 0 }
+    if (-not (Test-Path \$on)) { exit 1 }
+    Move-Item \$on \$off; exit 0" >/dev/null 2>&1
+}
+win11_sibling_enable() {
+  win11_stop
+  "$WVM" ps "\$base = \"\$env:APPDATA\\foobar2000-v2\"; \$on = \"\$base\\user-components-x64\\$1\"; \$off = \"\$base\\.solo-off-$1\";
+    if ((Test-Path \$off) -and -not (Test-Path \$on)) { Move-Item \$off \$on }" >/dev/null 2>&1 || true
+}
 win11_shot() { mkdir -p "$(dirname "$1")"; "$WVM" shot "$1" >/dev/null && echo "$1"; }
 
 mac_init() {
@@ -178,6 +214,18 @@ mac_log_size() { g "wc -c < $LOG 2>/dev/null || echo 0" | tr -d ' '; }
 mac_log_from() { g "tail -c +$1 $LOG 2>/dev/null" || true; }
 mac_crash_count() { g 'ls ~/Library/Logs/DiagnosticReports 2>/dev/null | grep -c "^foobar2000" || true'; }
 mac_cfg_sql() { mac_stop; g "sqlite3 $GUEST_CFG \"$1\""; }
+mac_sibling_disable() {
+  mac_stop
+  g "on=~/Library/foobar2000-v2/user-components/$1; off=~/Library/foobar2000-v2/.solo-off-$1;
+     if [ -d \$off ] && [ ! -d \$on ]; then exit 0; fi
+     [ -d \$on ] || exit 1
+     mv \$on \$off"
+}
+mac_sibling_enable() {
+  mac_stop
+  g "on=~/Library/foobar2000-v2/user-components/$1; off=~/Library/foobar2000-v2/.solo-off-$1;
+     if [ -d \$off ] && [ ! -d \$on ]; then mv \$off \$on; fi; true"
+}
 mac_shot() { local src; src="$("$MVM" shot | tail -1)"; mkdir -p "$(dirname "$1")"; cp "$src" "$1" && echo "$1"; }
 
 d() { local fn="${PLATFORM}_$1"; shift; "$fn" "$@"; }
@@ -201,6 +249,22 @@ expect() { wait_log "$1" "$2" && ok "$3" || { since_mark | tail -15; fail "$3 â€
 
 scenario_smoke() {
   d deploy "${1:-}"
+  smoke_steps
+}
+
+scenario_solo() {
+  d deploy "${1:-}"
+  say "move $SIBLING out of user-components (restored on exit)"
+  if d sibling_disable "$SIBLING"; then
+    on_exit "d sibling_enable '$SIBLING'"
+    ok "$SIBLING moved out"
+  else
+    warn "$SIBLING isn't installed on $PLATFORM; Panels UI already runs alone"
+  fi
+  smoke_steps 'navidrome=no'
+}
+
+smoke_steps() {
   say "verbose logging on"
   d cfg_sql "INSERT OR REPLACE INTO configInts VALUES ('$VERBOSE_KEY', 1);"
   say "relaunch foobar2000"
@@ -210,6 +274,7 @@ scenario_smoke() {
   d start
   running || fail "foobar2000 started â€” it didn't"
   expect 'NOTE +env .*foo_ui_panels .*verbose=on' 30 "session banner, verbose on"
+  [ -n "${1:-}" ] && expect "NOTE +env .*$1" 5 "session banner reports $1"
   note "version" "$(since_mark | grep -oE 'foo_ui_panels [^ ]+ \([^)]+\)' | tail -1)"
   expect 'NOTE +skin .*loading skin' 20 "skin loading"
   expect 'INFO +ui .*main window created' 20 "main window created"
@@ -293,7 +358,7 @@ case "$PLATFORM" in
 esac
 CMD="${1:-}"; shift || true
 case "$CMD" in
-  smoke)   "scenario_$CMD" "$@"; say "$PLATFORM $CMD passed" ;;
+  smoke|solo) "scenario_$CMD" "$@"; say "$PLATFORM $CMD passed" ;;
   log)     d log_from 1 | tail -n "${1:-50}" ;;
   shot)    d shot "${1:-$SHOTS/$PLATFORM-$(date +%H%M%S).png}" ;;
   click)   [ "$PLATFORM" = wine ] || fail "click is wine only (use wvm/mvm click)"; wclick "$@" ;;

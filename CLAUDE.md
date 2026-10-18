@@ -63,7 +63,9 @@ holds only what's true for both; anything repo-specific stays in the repo's own 
   lands in both repos in the same round, and the vendored copy stays byte-identical to the
   original. A new interface also gets a bullet in foo_navidrome's cross-compatibility list.
 - **Runtime check:** test a feature that crosses the boundary with both DLLs installed (Wine,
-  macOS VM). Also check that each side still works with the other component missing.
+  macOS VM). Also check that each side still works with the other component missing:
+  `ui-test.sh <platform> solo` in either repo moves the other component out of the profile for
+  the run (restored after) and runs that repo's smoke steps.
 
 ### SDK
 - **Source:** `reupen/foobar2000-sdk-unmodified`, tags `SDK-YYYY-MM-DD`. Don't use the
@@ -328,7 +330,10 @@ holds only what's true for both; anything repo-specific stays in the repo's own 
   (see Shared conventions › Test environments): `smoke` turns verbose logging on
   (`cfg_var.2F6C9A41-…` in configInts), deploys, relaunches and asserts the session banner,
   `loading skin`, `main window created` (logged on both platforms), playback (`playback  new track`, INFO from the skin engine's play callback), no crash/ERROR,
-  screenshot; `compare` prints a step matrix across platforms. Wine helpers kept: `click`
+  screenshot; `solo` moves foo_navidrome out of the profile (`<profile>/.solo-off-foo_navidrome`,
+  restored on exit through the `on_exit` stack) and runs the smoke steps plus `navidrome=no` in
+  the session banner (`session_summary()` reports whether foo_navidrome is installed);
+  `compare` prints a step matrix across platforms. Wine helpers kept: `click`
   (`tools/wclick.c`), `shot`, `pvars`, `restart`. Make: `ui`, `ui-smoke`, `ui-compare`,
   `win11-smoke`, `mac-vm-smoke`. Win11 reads the guest log by pulling it over scp.
 
