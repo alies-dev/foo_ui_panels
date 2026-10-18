@@ -3,6 +3,27 @@
 All notable changes to foo_ui_panels (Panels UI, reborn). Versions are the `v*` git tags; the
 GitHub release of each version has the downloadable `.fb2k-component`.
 
+## [1.13.0](https://github.com/santiagorod92/foo_ui_panels/compare/v1.12.0...v1.13.0) (2026-10-18)
+
+### Highlights
+- **Panels UI works on Windows on ARM again**: the native ARM64 build never loaded on ARM PCs
+  (Snapdragon / Copilot+), so foobar2000 fell back to its Default UI. Fixed.
+- **Sort the album browser by decade**.
+
+### New
+- **Album browser / cover flow: *Sort by › Decade (newest first)***: albums grouped by decade,
+  the newest first, and by artist inside each decade (albums without a year go last). It works
+  for Media Library and Navidrome albums alike, and is remembered like the other sort orders
+  (right-click empty space in the grid). Asked for in
+  [foo_navidrome#37](https://github.com/santiagorod92/foo_navidrome/issues/37).
+
+### Fixed
+- **Windows on ARM**: foobar2000 for ARM showed *Failed to load component ... A dynamic link
+  library (DLL) initialization routine failed* for `foo_ui_panels.dll` and started the Default UI
+  instead, since the ARM64 build was introduced in 1.9.0. The ARM64 build now uses the C runtime
+  that foobar2000 for ARM ships with, and loads. Nothing to do but update; on ARM PCs pick
+  **Panels UI (reborn)** again under *Preferences › Display* if foobar2000 switched away from it.
+
 ## [1.12.0](https://github.com/santiagorod92/foo_ui_panels/compare/v1.11.1...v1.12.0) (2026-10-15)
 
 ### Highlights
