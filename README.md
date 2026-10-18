@@ -510,8 +510,10 @@ WIN_ARCH=x86 ./build.sh       # -> build-x86/foo_ui_panels.dll      (32-bit foob
 The ARM64 build is ARM64EC, the flavour foobar2000 v2 for Windows on ARM itself is built as, so
 it runs natively there instead of through x64 emulation. clang-cl gets there with a few
 adjustments, all in `CMakeLists.txt` and `cmake/clang-cl-win64.cmake` (the why is in `CLAUDE.md`): the
-SDK's x86-only intrinsics are stubbed, and the static UCRT is linked in as x64 code (an ARM64EC
-image may mix in x64 code; xwin's ARM64 UCRT has no ARM64EC objects).
+SDK's x86-only intrinsics are stubbed, and the C runtime is linked dynamically: xwin's ARM64 UCRT
+has no ARM64EC objects, so `build.sh` generates an ARM64EC import library for it
+([`scripts/ucrt-arm64ec-lib.sh`](scripts/ucrt-arm64ec-lib.sh)), and the runtime DLLs come from
+foobar2000's own folder.
 
 The foobar2000 SDK is **not** vendored. It's expected next to the checkout (the same layout
 [foo_navidrome](https://github.com/santiagorod92/foo_navidrome) uses, so both can share one

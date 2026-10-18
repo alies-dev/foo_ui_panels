@@ -39,7 +39,8 @@ runs:
         sudo apt-get install -y "clang-$LLVM" "lld-$LLVM" "llvm-$LLVM" "libclang-rt-$LLVM-dev" cmake ninja-build ccache
         BIN="/usr/lib/llvm-$LLVM/bin"
         declare -A base=( [clang-cl]=clang [lld-link]=lld [llvm-lib]=llvm-ar
-                          [llvm-rc]=llvm-rc [llvm-mt]=llvm-mt [llvm-ar]=llvm-ar )
+                          [llvm-rc]=llvm-rc [llvm-mt]=llvm-mt [llvm-ar]=llvm-ar
+                          [llvm-readobj]=llvm-readobj )
         for t in "${!base[@]}"; do
           src=""
           for c in "$BIN/$t" "/usr/bin/$t-$LLVM" "$BIN/${base[$t]}"; do

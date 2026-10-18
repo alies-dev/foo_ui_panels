@@ -49,6 +49,8 @@ grep -rhoE '#include <[^>]+>' "$SDK_ROOT/pfc" "$SDK_ROOT/foobar2000/SDK" \
         ln -s "$(basename "$real")" "$(dirname "$real")/$base" || true
     done
 
+if [ "$WIN_ARCH" = arm64ec ]; then scripts/ucrt-arm64ec-lib.sh "$XWIN"; fi
+
 cmake -S . -B "$BUILD_DIR" -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE=cmake/clang-cl-win64.cmake \
   -DCMAKE_BUILD_TYPE=Release \

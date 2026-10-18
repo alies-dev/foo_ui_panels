@@ -418,11 +418,29 @@ holds only what's true for both; anything repo-specific stays in the repo's own 
   `N8N_FOOBAR_RELEASE_WEBHOOK_URL/_SECRET` secrets.
 
 ### Cross-build gotchas (handled in build.sh/toolchain, don't re-discover)
-- Static release CRT only: xwin ships no debug CRT → toolchain forces `/MT` Release.
-- ARM64EC (clang-cl, LLVM 22): links the aarch64 splat (ARM64X CRT) + the **x64** static UCRT
-  (aarch64's has no EC objects); `src/platform/win/arm64ec_compat.h` (force-included) stubs pfc's
+- Release CRT only: xwin ships no debug CRT → toolchain forces Release; x64/x86 link it
+  statically (`/MT`), ARM64EC dynamically (`/MD`, below).
+- ARM64EC (clang-cl, LLVM 22): `src/platform/win/arm64ec_compat.h` (force-included) stubs pfc's
   `__rdtsc`/`__cpuid`; `/U__x86_64__` (clang defines it, MSVC doesn't); `-fno-builtin` (libm
   intrinsic libcalls get no exit thunk → `undefined symbol: #log10`).
+- **ARM64EC links the CRT dynamically, against a generated UCRT import lib.** Up to 1.12.0 it
+  linked the aarch64 CRT + the **x64** static UCRT (xwin's aarch64 UCRT libs have no ARM64EC
+  symbols). That links, but the DLL never loaded on Windows on ARM: "Failed to load component …
+  A dynamic link library (DLL) initialization routine failed" (error 1114), found 2026-10-18 in
+  the win11-arm VM; a 10-line DLL built the same way failed identically, so it was the CRT mix,
+  not our code. Now the toolchain picks `MultiThreadedDLL` for arm64ec: vcruntime/msvcp import
+  libs come from xwin's aarch64 CRT (they carry EC symbols), and `scripts/ucrt-arm64ec-lib.sh`
+  (run by `build.sh`) writes `$XWIN/sdk/lib/ucrt/arm64ec/ucrt.lib` from the x64 `ucrt.lib`'s
+  export list with `llvm-lib /machine:arm64ec` (CI symlinks `llvm-readobj` for it). At runtime
+  `VCRUNTIME140`/`MSVCP140` come from foobar2000's own folder (the ARM build ships its ARM64EC
+  runtime, and foo_navidrome's MSVC ARM64EC build relies on the same) and the api-ms-win-crt
+  sets from the OS. A check outside foobar2000: an x64 exe doing `LoadLibrary` (`SetDllDirectory`
+  to `C:\Program Files\foobar2000` for `shared.dll`) run with `win11-arm.sh run`.
+- Building on a Mac: `scripts/toolchain.sh` (sourced by `build.sh`, `mac-build.sh`,
+  `run-unit-tests.sh`) resolves `SDK_ROOT` (sibling, else `~/.local/share/foo_navidrome-sdk`),
+  `XWIN` (`~/.xwin`, else `~/.local/share/xwin/sdk`) and puts Homebrew's llvm/lld first on `PATH`.
+  The macOS make is 3.81, which picks the *first* matching pattern rule: `win11-arm-%` must stay
+  above `win11-%` in the Makefile.
 - Header case-sensitivity: SDK includes cased headers; xwin lowercases — build.sh symlinks cased names.
 - Include order in main.cpp: `WIN32_LEAN_AND_MEAN`+`<winsock2.h>` before `<windows.h>`, then
   `<objbase.h>` (COM `interface` macro) + `<mmsystem.h>` (`timeGetTime`).
