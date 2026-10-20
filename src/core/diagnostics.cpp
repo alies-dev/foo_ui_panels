@@ -89,7 +89,7 @@ std::string build_diagnostics(const DiagnosticsInfo& d) {
            ", script problem markers: " + on_off(d.showProblems) + "\n";
     out += "- Persistent variables: " + std::to_string(d.pvarCount) + "\n";
     out += "- foo_navidrome: " + std::string(d.navidrome ? "installed" : "not installed") + "\n";
-    out += "- Verbose logging: " + on_off(d.verboseLogging) + "\n";
+    out += "- Verbose logging: " + on_off(d.verboseLogging) + ", UI language: " + (d.uiLanguage.empty() ? std::string("en") : d.uiLanguage) + "\n";
     if (!d.logPath.empty()) out += "- Log file: " + clean(d.logPath) + "\n";
 
     if (!d.panels.empty()) {

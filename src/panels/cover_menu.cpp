@@ -74,7 +74,7 @@ void show_viewer(SkinEngine* engine, const Cover& c) {
     if (tf.is_empty()) titleformat_compiler::get()->compile_safe(tf, "[%album artist% - ]%album%");
     c.track->format_title(nullptr, title, tf, nullptr);
     v.host = ui::create_popup_window(*engine->main_window(), v.view.get(), w, h,
-                                     title.is_empty() ? "Cover" : title.get_ptr(),
+                                     title.is_empty() ? tr("Cover") : title.get_ptr(),
                                      [id] { g_viewers.erase(id); });
     if (!v.host) g_viewers.erase(id);
 }
@@ -87,10 +87,10 @@ bool add_cover_menu_items(ui::Menu& menu, int firstId) {
     auto item = [&](const char* label, int id, bool enabled) {
         ui::MenuItem m; m.label = label; m.id = firstId + id; m.enabled = enabled; menu.push_back(m);
     };
-    item("View cover", kView, c.img != nullptr);
-    item("Open cover file", kOpenFile, !c.file.empty());
-    item("Show in folder", kShowFolder, !c.native.empty());
-    item("Search for the cover online", kSearch, true);
+    item(tr("View cover"), kView, c.img != nullptr);
+    item(tr("Open cover file"), kOpenFile, !c.file.empty());
+    item(tr("Show in folder"), kShowFolder, !c.native.empty());
+    item(tr("Search for the cover online"), kSearch, true);
     return true;
 }
 

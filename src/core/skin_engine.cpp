@@ -170,10 +170,10 @@ SkinEngine::Slot* SkinEngine::ensure_slot(const std::string& name, Kind kind, co
         break;
     }
     }
-    static const char* const kNames[] = { "Now playing", "Seek bar", "Volume", "Playlist", "Spectrum analyser",
-                                          "Peak meter", "Album art", "Album browser", "Lyrics", "Search",
-                                          "Playlists", "Panel" };
-    opts.accessible_name = kNames[(int)kind];
+    static const char* const kNames[] = { N_("Now playing"), N_("Seek bar"), N_("Volume"), N_("Playlist"), N_("Spectrum analyser"),
+                                          N_("Peak meter"), N_("Album art"), N_("Album browser"), N_("Lyrics"), N_("Search"),
+                                          N_("Playlists"), N_("Panel") };
+    opts.accessible_name = tr(kNames[(int)kind]);
     if (takes_keys(kind)) opts.on_tab = [this, name](bool back) { focus_next_panel(name, back); };
     if (s.view) {
         s.host = ui::create_child_view(*m_main, s.view.get(), opts);
@@ -243,9 +243,9 @@ gfx::Rect SkinEngine::draw_problem_marker(gfx::Canvas& cv, int w, int h, const s
 }
 
 std::string SkinEngine::problem_tooltip(const std::string& label) const {
-    std::string t = "Script problems in " + label + ":";
-    for (auto& p : script_problems(label)) t += "\n\xe2\x80\xa2 " + p.msg;
-    return t + "\nClick to edit the code (View \xe2\x80\xba Panels UI \xe2\x80\xba Show script problems hides this).";
+    std::string t = trf("Script problems in {0}:", { label });
+    for (auto& p : script_problems(label)) t += "\n\xe2\x80\xa2 " + p.shown();
+    return t + "\n" + tr("Click to edit the code (View \xe2\x80\xba Panels UI \xe2\x80\xba Show script problems hides this).");
 }
 
 void SkinEngine::repaint_all() {

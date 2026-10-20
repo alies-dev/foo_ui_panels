@@ -5,6 +5,7 @@
 #include <shellapi.h>
 #include <richedit.h>
 #include "../../core/skin_lint.h"
+#include "../../core/i18n.h"
 #include "../../core/fs_util.h"
 #include "gdi_canvas.h"
 #include "panel_host.h"
@@ -536,7 +537,7 @@ void update_editor_status(HWND wnd, EditorState* st) {
     CHARRANGE sel; SendMessageW(ed, EM_EXGETSEL, 0, (LPARAM)&sel);
     int line, col;
     line_col_utf16(editor_text(ed), (size_t)std::max<LONG>(0, sel.cpMin), line, col);
-    SetWindowTextW(GetDlgItem(wnd, IDC_STATUS), widen(editor_status(line, col, st->check, "Ctrl+S: apply", st->plain)).c_str());
+    SetWindowTextW(GetDlgItem(wnd, IDC_STATUS), widen(editor_status(line, col, st->check, tr("Ctrl+S: apply"), st->plain)).c_str());
 }
 
 void recheck_editor(HWND wnd, EditorState* st) {
@@ -738,6 +739,12 @@ std::string wine_version() {
     return {};
 }
 
+std::string system_language() {
+    wchar_t name[LOCALE_NAME_MAX_LENGTH] = {};
+    if (LCIDToLocaleName(MAKELCID(GetUserDefaultUILanguage(), SORT_DEFAULT), name, LOCALE_NAME_MAX_LENGTH, 0) <= 0) return {};
+    return narrow(name);
+}
+
 std::string home_dir() {
     wchar_t buf[MAX_PATH] = {};
     const DWORD n = GetEnvironmentVariableW(L"USERPROFILE", buf, MAX_PATH);
@@ -785,10 +792,10 @@ void open_text_editor(MainWindow& root, const std::string& key, const std::strin
     HWND status = CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE | SS_LEFTNOWORDWRAP | SS_ENDELLIPSIS,
                                   0, 0, 0, 0, wnd, (HMENU)(INT_PTR)IDC_STATUS, module(), nullptr);
     SendMessageW(status, WM_SETFONT, (WPARAM)st->ui, TRUE);
-    const struct { int id; const wchar_t* label; } btns[] = {
-        { IDC_APPLY, L"Apply" }, { IDC_OK, L"OK" }, { IDC_CANCEL, L"Cancel" }, { IDC_REVERT, L"Revert" } };
+    const struct { int id; const char* label; } btns[] = {
+        { IDC_APPLY, tr("Apply") }, { IDC_OK, "OK" }, { IDC_CANCEL, tr("Cancel") }, { IDC_REVERT, tr("Revert") } };
     for (auto& b : btns) {
-        HWND h = CreateWindowExW(0, L"BUTTON", b.label, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+        HWND h = CreateWindowExW(0, L"BUTTON", widen(b.label).c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
                                  0, 0, 0, 0, wnd, (HMENU)(INT_PTR)b.id, module(), nullptr);
         SendMessageW(h, WM_SETFONT, (WPARAM)st->ui, TRUE);
     }

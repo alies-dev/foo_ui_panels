@@ -33,6 +33,7 @@ void PrefsModel::reset() {
     m_now.zoom = 0;
     m_now.onTop = false;
     m_now.verbose = false;
+    m_now.language.clear();
     clear_overrides();
     refresh_skins();
     load_script();
@@ -88,14 +89,14 @@ void PrefsModel::choose_skin_folder(const std::string& folderIn) {
 
 std::string PrefsModel::chosen_folder_problem(const std::string& folder) const {
     if (!main_script().empty()) return {};
-    const std::string msg = "Saved as the skin folder:\n" + folder + "\n\n";
+    const std::string msg = trf("Saved as the skin folder:\n{0}\n\n", { folder });
     if (main_choices().size() > 1)
-        return msg + "It has " + std::to_string(main_choices().size()) + " .txt files at the top level, so the "
-               "main script is ambiguous. Pick it under Main script in Preferences (opening now), or set "
-               "`script =` in the skin's " + SkinConfig::kFileName + ".";
-    return msg + "There is no main script to run in it yet: a skin's main script is the .txt file at its "
-           "top level (or one subfolder per skin, each with its own). The skin starts as soon as one is "
-           "there — no restart needed.";
+        return msg + trf("It has {0} .txt files at the top level, so the main script is ambiguous. Pick it under Main "
+                         "script in Preferences (opening now), or set `script =` in the skin's {1}.",
+                         { std::to_string(main_choices().size()), SkinConfig::kFileName });
+    return msg + tr("There is no main script to run in it yet: a skin's main script is the .txt file at its "
+                    "top level (or one subfolder per skin, each with its own). The skin starts as soon as one is "
+                    "there — no restart needed.");
 }
 
 std::string PrefsModel::skin_dir() const { return m_b.skin_dir(m_now.root, m_now.active); }
@@ -103,8 +104,9 @@ std::string PrefsModel::skin_dir() const { return m_b.skin_dir(m_now.root, m_now
 std::vector<std::string> PrefsModel::main_choices() const { return main_script_candidates(skin_dir()); }
 
 std::string PrefsModel::root_note() const {
-    return "The skins root folder holds one subfolder per skin. Leave it empty to use the single skin in " +
-           m_b.skin_dir("", "") + ". Main script: the skin's top-level .txt to run (automatic when there is only one).";
+    return trf("The skins root folder holds one subfolder per skin. Leave it empty to use the single skin in {0}. "
+               "Main script: the skin's top-level .txt to run (automatic when there is only one).",
+               { m_b.skin_dir("", "") });
 }
 
 static int index_in(const std::vector<std::string>& values, const std::string& v) {
@@ -116,7 +118,7 @@ static std::string value_at(const std::vector<std::string>& values, int i) {
     return i <= 0 || i > (int)values.size() ? std::string() : values[(size_t)i - 1];
 }
 static std::vector<std::string> with_first(const char* first, const std::vector<std::string>& rest) {
-    std::vector<std::string> v{ first };
+    std::vector<std::string> v{ tr(first) };
     v.insert(v.end(), rest.begin(), rest.end());
     return v;
 }
@@ -137,7 +139,7 @@ std::string PrefsModel::main_script(std::string* why) const {
 
 std::string PrefsModel::skin_warning() const {
     std::string why;
-    if (main_script(&why).empty()) return why.empty() ? "No main script found in this folder." : why;
+    if (main_script(&why).empty()) return why.empty() ? tr("No main script found in this folder.") : why;
     return why;
 }
 
@@ -171,7 +173,7 @@ const std::vector<int>& PrefsModel::zoom_choices() {
 }
 
 std::vector<std::string> PrefsModel::zoom_labels(const std::string& automatic) {
-    std::vector<std::string> v{ automatic };
+    std::vector<std::string> v{ tr(automatic) };
     for (int z : zoom_choices()) v.push_back(std::to_string(z) + "%");
     return v;
 }
@@ -186,6 +188,19 @@ int PrefsModel::zoom_index() const {
 void PrefsModel::set_zoom_index(int i) {
     const auto& z = zoom_choices();
     m_now.zoom = (i <= 0 || i > (int)z.size()) ? 0 : z[(size_t)i - 1];
+}
+
+std::vector<std::string> PrefsModel::language_labels() {
+    std::vector<std::string> v;
+    for (const auto& o : i18n::language_options()) v.push_back(tr(o.label));
+    return v;
+}
+
+int PrefsModel::language_index() const { return i18n::language_option_index(m_now.language); }
+
+void PrefsModel::set_language_index(int i) {
+    const auto& opts = i18n::language_options();
+    m_now.language = i <= 0 || i >= (int)opts.size() ? std::string() : opts[(size_t)i].value;
 }
 
 void PrefsModel::set_font(const std::string& face, const std::string& size) {

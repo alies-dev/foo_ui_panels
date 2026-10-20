@@ -3,6 +3,7 @@
 #include "../gfx/canvas.h"
 #include "../ui/view.h"
 #include "builtin_skin.h"
+#include "i18n.h"
 #include "log.h"
 #include "button.h"
 #include "pvars.h"
@@ -129,7 +130,13 @@ public:
     std::string read_panel_script_raw(const std::string& name);
     bool save_panel_script(const std::string& name, const std::string& text);
 
-    struct ScriptProblem { std::string msg; bool serious; };
+    struct ScriptProblem {
+        std::string msg;
+        bool serious;
+        std::string detail;
+        std::string text() const { return detail.empty() ? msg : msg + ": " + detail; }
+        std::string shown() const { return detail.empty() ? std::string(tr(msg)) : std::string(tr(msg)) + ": " + detail; }
+    };
     const std::vector<ScriptProblem>& script_problems(const std::string& label) const;
     void add_script_problem(const std::string& label, const std::string& msg, bool serious = true);
     std::string panel_script_label(const std::string& name) const { return script_label(panels_dir() + "/" + name + ".txt"); }

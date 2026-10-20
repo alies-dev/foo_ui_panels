@@ -131,6 +131,15 @@ std::string unquote(std::string s) {
     return s;
 }
 
+std::string tf_quote(const std::string& text) {
+    std::string out = "'";
+    for (char c : text) {
+        if (c == '\'') out += "''''";
+        else out += c;
+    }
+    return out + "'";
+}
+
 void parse_img_opts(const std::string& o, int& alpha, int& flip) {
     auto a = o.find("alpha-");        if (a != std::string::npos) alpha = atoi(o.c_str() + a + 6);
     auto r = o.find("ROTATEFLIP-");   if (r != std::string::npos) flip  = atoi(o.c_str() + r + 11);

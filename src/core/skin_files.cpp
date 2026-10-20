@@ -72,7 +72,7 @@ bool SkinEngine::load_main_script() {
     bool ok = load(skin.empty() ? builtin_test_skin() : skin.c_str());
     if (!ok) {
         log::console(log::Level::Error, "skin", "main script failed to compile: " + m_mainPath);
-        add_script_problem(script_label(m_mainPath), "Doesn't compile (unbalanced parentheses or quotes?) — the previous version keeps running");
+        add_script_problem(script_label(m_mainPath), N_("Doesn't compile (unbalanced parentheses or quotes?) — the previous version keeps running"));
     }
     return ok;
 }
@@ -250,7 +250,7 @@ std::string SkinEngine::read_panel_script(const std::string& name) {
     std::string s = read_file(path);
     if (s.empty() && !file_exists(path)) {
         report_once("panel script not found: " + path);
-        m_problems[script_label(path)] = { { "The panel's script is missing: " + script_label(path), true } };
+        m_problems[script_label(path)] = { { N_("The panel's script is missing"), true, script_label(path) } };
         return {};
     }
     diagnose_script(script_label(path), s);
@@ -263,10 +263,10 @@ std::string SkinEngine::read_panel_script(const std::string& name) {
 void SkinEngine::open_main_script_editor() {
     if (!m_main || m_mainPath.empty()) return;
     const std::string label = script_label(m_mainPath);
-    ui::open_text_editor(*m_main, "code:main", "Edit code - " + label, read_file(m_mainPath),
+    ui::open_text_editor(*m_main, "code:main", trf("Edit code - {0}", { label }), read_file(m_mainPath),
                          [this](const std::string& text) {
                              if (!write_file(m_mainPath, text)) {
-                                 ui::message_box(nullptr, "Edit code", "Could not save " + m_mainPath);
+                                 ui::message_box(nullptr, tr("Edit code"), trf("Could not save {0}", { m_mainPath }));
                                  return false;
                              }
                              std::error_code ec;

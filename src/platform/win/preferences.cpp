@@ -45,7 +45,7 @@ std::wstring get_text(HWND ctl) {
     return w;
 }
 std::string get_utf8(HWND ctl) { return to_utf8(get_text(ctl)); }
-std::wstring w(const char* s) { return to_wide(s); }
+std::wstring w(const char* s) { return to_wide(tr(s)); }
 void fill_combo(HWND combo, const std::vector<std::string>& labels, int sel) {
     SendMessageW(combo, CB_RESETCONTENT, 0, 0);
     for (auto& l : labels) SendMessageW(combo, CB_ADDSTRING, 0, (LPARAM)to_wide(l).c_str());
@@ -56,7 +56,7 @@ COLORREF colorref_of(gfx::Color c) { return RGB(c.r, c.g, c.b); }
 
 enum {
     kIdRootEdit = 1001, kIdRootBrowse = 1002, kIdSkinCombo = 1003, kIdMainCombo = 1004,
-    kIdZoomCombo = 1005, kIdOnTop = 1006, kIdPreview = 1007, kIdWizard = 1008,
+    kIdZoomCombo = 1005, kIdOnTop = 1006, kIdPreview = 1007, kIdWizard = 1008, kIdLanguageCombo = 1009,
     kIdScriptEdit = 1010,
     kIdVarsList = 1020, kIdVarsRescan = 1021, kIdVarsEdit = 1022,
     kIdFontFaceEdit = 1030, kIdFontSizeEdit = 1031, kIdFontPickBtn = 1032,
@@ -153,7 +153,7 @@ private:
         HWND p = m_pageGeneral;
         m_rootLabel = child(p, L"STATIC", w(prefs_text::kRoot).c_str(), 0);
         m_rootEdit = child(p, L"EDIT", L"", WS_TABSTOP | ES_AUTOHSCROLL, kIdRootEdit, WS_EX_CLIENTEDGE);
-        m_rootBrowseBtn = child(p, L"BUTTON", L"Browse...", WS_TABSTOP, kIdRootBrowse);
+        m_rootBrowseBtn = child(p, L"BUTTON", w(prefs_text::kBrowse).c_str(), WS_TABSTOP, kIdRootBrowse);
         m_skinLabel = child(p, L"STATIC", w(prefs_text::kSkin).c_str(), 0);
         m_skinCombo = child(p, L"COMBOBOX", L"", WS_TABSTOP | CBS_DROPDOWNLIST, kIdSkinCombo, WS_EX_CLIENTEDGE);
         m_mainLabel = child(p, L"STATIC", w(prefs_text::kMain).c_str(), 0);
@@ -162,6 +162,10 @@ private:
         m_zoomLabel = child(p, L"STATIC", w(prefs_text::kZoom).c_str(), 0);
         m_zoomCombo = child(p, L"COMBOBOX", L"", WS_TABSTOP | CBS_DROPDOWNLIST, kIdZoomCombo, WS_EX_CLIENTEDGE);
         fill_combo(m_zoomCombo, PrefsModel::zoom_labels(prefs_text::kZoomAutoScaled), 0);
+        m_languageLabel = child(p, L"STATIC", w(prefs_text::kLanguage).c_str(), 0);
+        m_languageCombo = child(p, L"COMBOBOX", L"", WS_TABSTOP | CBS_DROPDOWNLIST, kIdLanguageCombo, WS_EX_CLIENTEDGE);
+        fill_combo(m_languageCombo, PrefsModel::language_labels(), 0);
+        m_languageNote = child(p, L"STATIC", w(prefs_text::kLanguageNote).c_str(), SS_NOPREFIX);
         m_onTopCheck = child(p, L"BUTTON", w(prefs_text::kOnTop).c_str(), WS_TABSTOP | BS_AUTOCHECKBOX, kIdOnTop);
         m_wizardBtn = child(p, L"BUTTON", w(prefs_text::kWizard).c_str(), WS_TABSTOP, kIdWizard);
         m_wizardNote = child(p, L"STATIC", w(prefs_text::kWizardNote).c_str(), SS_NOPREFIX);
@@ -192,10 +196,10 @@ private:
         m_fontFaceEdit = child(p, L"EDIT", L"", WS_TABSTOP | ES_AUTOHSCROLL, kIdFontFaceEdit, WS_EX_CLIENTEDGE);
         m_fontSizeLabel = child(p, L"STATIC", w(prefs_text::kFontSize).c_str(), 0);
         m_fontSizeEdit = child(p, L"EDIT", L"", WS_TABSTOP | ES_AUTOHSCROLL | ES_NUMBER, kIdFontSizeEdit, WS_EX_CLIENTEDGE);
-        m_fontPickBtn = child(p, L"BUTTON", L"Pick font...", WS_TABSTOP, kIdFontPickBtn);
+        m_fontPickBtn = child(p, L"BUTTON", w(prefs_text::kPickFont).c_str(), WS_TABSTOP, kIdFontPickBtn);
         m_accentLabel = child(p, L"STATIC", w(prefs_text::kAccent).c_str(), 0);
         m_accentSwatch = child(p, L"BUTTON", L"", BS_OWNERDRAW, kIdAccentSwatch, WS_EX_CLIENTEDGE);
-        m_accentPickBtn = child(p, L"BUTTON", L"Pick colour...", WS_TABSTOP, kIdAccentPickBtn);
+        m_accentPickBtn = child(p, L"BUTTON", w(prefs_text::kPickColour).c_str(), WS_TABSTOP, kIdAccentPickBtn);
         m_accentClearBtn = child(p, L"BUTTON", w(prefs_text::kClearOverrides).c_str(), WS_TABSTOP, kIdAccentClearBtn);
 
         p = m_pageDiag;
@@ -219,10 +223,11 @@ private:
         set_text(m_rootEdit, m_model.pending().root);
         refresh_skin_choice();
         SendMessageW(m_zoomCombo, CB_SETCURSEL, m_model.zoom_index(), 0);
+        SendMessageW(m_languageCombo, CB_SETCURSEL, m_model.language_index(), 0);
         SendMessageW(m_onTopCheck, BM_SETCHECK, m_model.pending().onTop ? BST_CHECKED : BST_UNCHECKED, 0);
         SendMessageW(m_verboseCheck, BM_SETCHECK, m_model.pending().verbose ? BST_CHECKED : BST_UNCHECKED, 0);
         const std::string log = m_model.log_path();
-        set_text(m_logPathLabel, std::string(prefs_text::kLogFile) + " " + (log.empty() ? prefs_text::kNoLog : log));
+        set_text(m_logPathLabel, std::string(tr(prefs_text::kLogFile)) + " " + (log.empty() ? tr(prefs_text::kNoLog) : log));
         refresh_vars_list();
         refresh_overrides_ui();
         m_updating = was;
@@ -269,7 +274,7 @@ private:
 
     void copy_diagnostics() {
         const bool ok = ui::copy_to_clipboard(m_model.diagnostics());
-        set_text(m_diagStatus, ok ? prefs_text::kCopied : prefs_text::kCopyFailed);
+        set_text(m_diagStatus, ok ? tr(prefs_text::kCopied) : tr(prefs_text::kCopyFailed));
     }
 
     void open_log_folder() {
@@ -286,7 +291,7 @@ private:
     }
 
     void browse_root() {
-        const std::string dir = win::pick_folder(m_wnd, prefs_text::kChooseFolder,
+        const std::string dir = win::pick_folder(m_wnd, tr(prefs_text::kChooseFolder),
                                                  folder_picker_start(m_model.pending().root, layout_skins_dir()));
         if (dir.empty()) return;
         m_model.choose_skin_folder(dir);
@@ -381,7 +386,7 @@ private:
             } else {
                 gfx::FontSpec f; f.face = "Segoe UI"; f.size = 9;
                 cv.set_font(f);
-                cv.draw_text(prefs_text::kNoPreview,
+                cv.draw_text(tr(prefs_text::kNoPreview),
                              gfx::Rect{ 8, 0, w - 16, h }, gfx::kAlignCenter | gfx::kWordWrap,
                              gfx::Color(170, 170, 170));
             }
@@ -418,20 +423,24 @@ private:
     }
     void layout_general() {
         RECT rc; GetClientRect(m_pageGeneral, &rc);
-        const int pad = 8, labelH = 18, editH = 22, btnW = 90, comboW = 260;
+        const int pad = 8, labelH = 18, editH = 22, btnW = 110, comboW = 260, labelW = 130;
         int y = pad;
         MoveWindow(m_rootLabel, pad, y, rc.right - pad * 2, labelH, TRUE); y += labelH + 2;
         MoveWindow(m_rootEdit, pad, y, rc.right - pad * 3 - btnW, editH, TRUE);
         MoveWindow(m_rootBrowseBtn, rc.right - pad - btnW, y, btnW, editH, TRUE); y += editH + 10;
-        MoveWindow(m_skinLabel, pad, y, 100, labelH, TRUE);
-        MoveWindow(m_skinCombo, pad + 104, y - 2, comboW, editH, TRUE); y += editH + 6;
-        MoveWindow(m_mainLabel, pad, y, 100, labelH, TRUE);
-        MoveWindow(m_mainCombo, pad + 104, y - 2, comboW, editH, TRUE); y += editH + 4;
+        MoveWindow(m_skinLabel, pad, y, labelW, labelH, TRUE);
+        MoveWindow(m_skinCombo, pad + labelW + 4, y - 2, comboW, editH, TRUE); y += editH + 6;
+        MoveWindow(m_mainLabel, pad, y, labelW, labelH, TRUE);
+        MoveWindow(m_mainCombo, pad + labelW + 4, y - 2, comboW, editH, TRUE); y += editH + 4;
         MoveWindow(m_skinWarning, pad, y, rc.right - pad * 2, labelH, TRUE); y += labelH + 8;
-        MoveWindow(m_zoomLabel, pad, y, 100, labelH, TRUE);
-        MoveWindow(m_zoomCombo, pad + 104, y - 2, comboW, editH, TRUE); y += editH + 8;
+        MoveWindow(m_zoomLabel, pad, y, labelW, labelH, TRUE);
+        MoveWindow(m_zoomCombo, pad + labelW + 4, y - 2, comboW, editH, TRUE); y += editH + 8;
+        MoveWindow(m_languageLabel, pad, y, labelW, labelH, TRUE);
+        MoveWindow(m_languageCombo, pad + labelW + 4, y - 2, comboW, editH, TRUE);
+        const int noteX = pad + labelW + comboW + 12;
+        MoveWindow(m_languageNote, noteX, y + 1, std::max(0, (int)rc.right - noteX - pad), labelH, TRUE); y += editH + 8;
         MoveWindow(m_onTopCheck, pad, y, rc.right - pad * 2, labelH + 2, TRUE); y += labelH + 8;
-        const int wizW = 130;
+        const int wizW = 160;
         MoveWindow(m_wizardBtn, pad, y, wizW, editH + 2, TRUE);
         MoveWindow(m_wizardNote, pad + wizW + 8, y + 4, std::max(0, (int)rc.right - pad * 2 - wizW - 8), labelH, TRUE);
         y += editH + 10;
@@ -507,6 +516,9 @@ private:
         case kIdScriptEdit: if (code == EN_CHANGE) { m_model.set_script(get_utf8(m_scriptEdit)); changed(); } break;
         case kIdZoomCombo:
             if (code == CBN_SELCHANGE) { m_model.set_zoom_index((int)SendMessageW(m_zoomCombo, CB_GETCURSEL, 0, 0)); changed(); }
+            break;
+        case kIdLanguageCombo:
+            if (code == CBN_SELCHANGE) { m_model.set_language_index((int)SendMessageW(m_languageCombo, CB_GETCURSEL, 0, 0)); changed(); }
             break;
         case kIdOnTop:
             if (code == BN_CLICKED) { m_model.set_on_top(SendMessageW(m_onTopCheck, BM_GETCHECK, 0, 0) == BST_CHECKED); changed(); }
@@ -614,7 +626,7 @@ private:
     HWND m_rootLabel = nullptr, m_rootEdit = nullptr, m_rootBrowseBtn = nullptr,
          m_skinLabel = nullptr, m_skinCombo = nullptr, m_skinWarning = nullptr,
          m_mainLabel = nullptr, m_mainCombo = nullptr,
-         m_zoomLabel = nullptr, m_zoomCombo = nullptr, m_onTopCheck = nullptr, m_rootNote = nullptr, m_preview = nullptr,
+         m_zoomLabel = nullptr, m_zoomCombo = nullptr, m_languageLabel = nullptr, m_languageCombo = nullptr, m_languageNote = nullptr, m_onTopCheck = nullptr, m_rootNote = nullptr, m_preview = nullptr,
          m_wizardBtn = nullptr, m_wizardNote = nullptr;
     HWND m_scriptLabel = nullptr, m_scriptEdit = nullptr;
     HWND m_varsNote = nullptr, m_varsList = nullptr, m_varsRescanBtn = nullptr, m_varsEdit = nullptr;

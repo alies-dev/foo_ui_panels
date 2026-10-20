@@ -56,6 +56,7 @@ std::string session_summary() {
     return std::string("foo_ui_panels ") + PUI_VERSION + " (" + build_arch() + ") on " +
            core_version_info::g_get_version_string() + ", " + platform_name() + " " + ui::os_version() +
            (wine.empty() ? "" : ", Wine " + wine) + ", verbose=" + (verbose_logging() ? "on" : "off") +
+           ", ui=" + i18n::language_code(i18n::language()) +
            ", navidrome=" + (navidrome_installed() ? "yes" : "no");
 }
 
@@ -99,6 +100,7 @@ std::string collect_diagnostics() {
     d.onTop = always_on_top();
     d.showProblems = show_script_problems();
     d.verboseLogging = verbose_logging();
+    d.uiLanguage = i18n::language_code(i18n::language());
     for (const auto& [k, v] : load_all_pvars()) if (!k.empty() && k[0] != '_') ++d.pvarCount;
     d.components = installed_components();
     d.navidrome = navidrome_installed();

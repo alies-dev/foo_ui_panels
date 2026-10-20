@@ -129,11 +129,11 @@ void Spectrum::show_context_menu(int x, int y) {
     auto item = [](const char* label, int id, bool checked) {
         ui::MenuItem m; m.label = label; m.id = id; m.checked = checked; return m;
     };
-    menu.push_back(item("Bars", IDM_SPECTRUM_BARS, barsMode));
-    menu.push_back(item("Standard", IDM_SPECTRUM_STANDARD, !barsMode));
+    menu.push_back(item(tr("Bars"), IDM_SPECTRUM_BARS, barsMode));
+    menu.push_back(item(tr("Standard"), IDM_SPECTRUM_STANDARD, !barsMode));
     menu.push_back(ui::MenuItem::sep());
-    menu.push_back(item("Logarithmic Scale", IDM_SPECTRUM_LOG, logScale));
-    menu.push_back(item("Linear Scale", IDM_SPECTRUM_LINEAR, !logScale));
+    menu.push_back(item(tr("Logarithmic Scale"), IDM_SPECTRUM_LOG, logScale));
+    menu.push_back(item(tr("Linear Scale"), IDM_SPECTRUM_LINEAR, !logScale));
 
     switch (ui::popup_menu(host(), x, y, menu)) {
     case IDM_SPECTRUM_BARS:     m_engine->set_pvar("spectrum.mode", "bars"); break;

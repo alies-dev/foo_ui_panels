@@ -8,7 +8,7 @@
 
 namespace pui {
 
-static const char* kPlaylistName = "Album Browser";
+static const char* kPlaylistName = N_("Album Browser");
 static const unsigned kCaption = gfx::kAlignCenter | gfx::kSingleLine | gfx::kEndEllipsis;
 
 struct ALScripts {
@@ -145,7 +145,7 @@ void AlbumList::start_remote_load() {
     m_cover_failed.clear();
     auto api = navidrome_api();
     if (api.is_empty()) return;
-    if (!api->is_configured()) { m_remote_err = "Navidrome is not configured (Preferences > Tools > Navidrome)."; return; }
+    if (!api->is_configured()) { m_remote_err = tr("Navidrome is not configured (Preferences > Tools > Navidrome)."); return; }
     m_remote_loading = true;
     const unsigned gen = m_gen;
     auto alive = m_alive; auto abort = m_abort; AlbumList* self = this;
@@ -184,7 +184,7 @@ void AlbumList::start_remote_load() {
                 ok = v2->list_albums_v2(static_cast<navidrome::library_album_sink_v2&>(sink), *abort, err);
             else
                 ok = api->list_albums(static_cast<navidrome::library_album_sink&>(sink), *abort, err);
-        } catch (...) { err = "Navidrome library request failed."; }
+        } catch (...) { err = N_("Navidrome library request failed."); }
         sink.flush();
         std::string errs = ok ? std::string() : std::string(err.c_str());
         if (!ok) log::warn("navidrome", "album list request failed: " + errs);
@@ -286,11 +286,11 @@ void AlbumList::paint(gfx::Canvas& cv) {
     if (m_groups.empty()) {
         cv.set_font(fArtist);
         pfc::string8 msg;
-        if (!m_filter.empty() && !m_all.empty()) msg << "No albums match \"" << m_filter.c_str() << "\"";
-        else if (m_remote_loading) msg = "Loading Navidrome library...";
-        else if (!m_remote_err.empty()) msg = m_remote_err.c_str();
+        if (!m_filter.empty() && !m_all.empty()) msg = trf("No albums match \"{0}\"", { m_filter }).c_str();
+        else if (m_remote_loading) msg = tr("Loading Navidrome library...");
+        else if (!m_remote_err.empty()) msg = tr(m_remote_err).c_str();
         else msg = library_manager::get()->is_library_enabled()
-            ? "No albums found in the Media Library." : "Media Library is not configured (Preferences > Media Library).";
+            ? tr("No albums found in the Media Library.") : tr("Media Library is not configured (Preferences > Media Library).");
         cv.draw_text(msg.get_ptr(), gfx::Rect{ 0, 0, W, H }, gfx::kAlignCenter | gfx::kVCenter | gfx::kSingleLine,
                      color_of("text_secondary", gfx::Color(200, 205, 220)));
     }
@@ -347,8 +347,7 @@ void AlbumList::paint_filter_bar(gfx::Canvas& cv, int W) {
     if (m_filter.empty()) return;
     static const gfx::FontSpec f{ "Segoe UI", 10, false, true };
     cv.set_font(f);
-    char count[48]; snprintf(count, sizeof count, "   %u of %u", (unsigned)m_groups.size(), (unsigned)m_all.size());
-    const std::string text = "Search: " + m_filter + count;
+    const std::string text = trf("Search: {0}   {1} of {2}", { m_filter, std::to_string(m_groups.size()), std::to_string(m_all.size()) });
     const int h = 22, w = std::min(W - 12, cv.text_width(text) + 20);
     const gfx::Rect r{ (W - w) / 2, 6, w, h };
     gfx::Color accent(0, 140, 220);
@@ -442,9 +441,9 @@ void AlbumList::play_group(int idx) {
     t_size n = pm->get_playlist_count(), target = pfc_infinite;
     for (t_size i = 0; i < n; ++i) {
         pfc::string8 nm; pm->playlist_get_name(i, nm);
-        if (nm == kPlaylistName) { target = i; break; }
+        if (nm == tr(kPlaylistName)) { target = i; break; }
     }
-    if (target == pfc_infinite) target = pm->create_playlist(kPlaylistName, strlen(kPlaylistName), pfc_infinite);
+    if (target == pfc_infinite) target = pm->create_playlist(tr(kPlaylistName), strlen(tr(kPlaylistName)), pfc_infinite);
     if (target == pfc_infinite) return;
     pm->playlist_remove_items(target, bit_array_true());
     metadb_handle_list list; for (auto& h : m_groups[idx].items) list.add_item(h);
@@ -471,15 +470,15 @@ void AlbumList::on_rclick(int x, int y) {
         auto item = [](const char* label, int id, bool checked = false, bool enabled = true) {
             ui::MenuItem m; m.label = label; m.id = id; m.checked = checked; m.enabled = enabled; return m;
         };
-        ui::MenuItem sort; sort.label = "Sort by";
-        sort.children = { item("Artist", kArtist, m_sort == AlbumSort::Artist),
-                          item("Album", kAlbum, m_sort == AlbumSort::Album),
-                          item("Year (newest first)", kYear, m_sort == AlbumSort::Year),
-                          item("Decade (newest first)", kDecade, m_sort == AlbumSort::Decade),
-                          item("Recently added", kAdded, m_sort == AlbumSort::Added) };
+        ui::MenuItem sort; sort.label = tr("Sort by");
+        sort.children = { item(tr("Artist"), kArtist, m_sort == AlbumSort::Artist),
+                          item(tr("Album"), kAlbum, m_sort == AlbumSort::Album),
+                          item(tr("Year (newest first)"), kYear, m_sort == AlbumSort::Year),
+                          item(tr("Decade (newest first)"), kDecade, m_sort == AlbumSort::Decade),
+                          item(tr("Recently added"), kAdded, m_sort == AlbumSort::Added) };
         ui::Menu menu = { sort, ui::MenuItem::sep(),
-                          item(m_filter.empty() ? "Type to search" : "Clear search (Esc)", kClear, false, !m_filter.empty()),
-                          item("Refresh (F5)", kRefresh) };
+                          item(m_filter.empty() ? tr("Type to search") : tr("Clear search (Esc)"), kClear, false, !m_filter.empty()),
+                          item(tr("Refresh (F5)"), kRefresh) };
         switch (ui::popup_menu(host(), x, y, menu)) {
         case kArtist: set_sort(AlbumSort::Artist); break;
         case kAlbum: set_sort(AlbumSort::Album); break;
@@ -495,8 +494,8 @@ void AlbumList::on_rclick(int x, int y) {
     invalidate();
     if (m_groups[idx].remote) {
         ui::Menu menu;
-        ui::MenuItem play; play.label = "Play album"; play.id = 1; menu.push_back(play);
-        ui::MenuItem add; add.label = "Add to current playlist"; add.id = 2; menu.push_back(add);
+        ui::MenuItem play; play.label = tr("Play album"); play.id = 1; menu.push_back(play);
+        ui::MenuItem add; add.label = tr("Add to current playlist"); add.id = 2; menu.push_back(add);
         int cmd = ui::popup_menu(host(), x, y, menu);
         auto api = navidrome_api();
         if (cmd && api.is_valid()) api->play_album(m_groups[idx].remote_id.c_str(), cmd == 1, cmd == 1);

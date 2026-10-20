@@ -17,6 +17,7 @@ std::string hex_colorref(unsigned long c);
 std::string trailing_literal(const std::string& body);
 std::string clean_action(std::string a);
 std::string unquote(std::string s);
+std::string tf_quote(const std::string& text);
 void parse_img_opts(const std::string& o, int& alpha, int& flip);
 unsigned text_opts(const std::string& o);
 void parse_glow_tail(const std::string& t, int& expand, int& alpha);

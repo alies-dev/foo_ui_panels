@@ -33,6 +33,7 @@ public:
         s.zoom = zoom_setting();
         s.onTop = always_on_top();
         s.verbose = verbose_logging();
+        s.language = ui_language();
         s.pvars = load_all_pvars();
         return s;
     }
@@ -53,6 +54,7 @@ public:
         set_zoom_setting(now.zoom);
         set_always_on_top(now.onTop);
         set_verbose_logging(now.verbose);
+        set_ui_language(now.language);
         if (skinChanged) log::info("prefs", "skin changed to " + (now.active.empty() ? now.root : now.root + "/" + now.active));
         if (skinChanged) SkinEngine::reload_all();
         apply_view_settings();

@@ -52,15 +52,15 @@ void SkinEngine::show_tray_menu() {
     auto pc = playback_control::get();
     auto item = [](const char* label, int id) { ui::MenuItem m; m.label = label; m.id = id; return m; };
     ui::Menu menu;
-    menu.push_back(item(pc->is_playing() && !pc->is_paused() ? "Pause" : "Play", kPlayPause));
-    menu.push_back(item("Stop", kStop));
-    menu.push_back(item("Previous", kPrev));
-    menu.push_back(item("Next", kNext));
+    menu.push_back(item(pc->is_playing() && !pc->is_paused() ? tr("Pause") : tr("Play"), kPlayPause));
+    menu.push_back(item(tr("Stop"), kStop));
+    menu.push_back(item(tr("Previous"), kPrev));
+    menu.push_back(item(tr("Next"), kNext));
     menu.push_back(ui::MenuItem::sep());
-    menu.push_back(item("Show foobar2000", kShow));
-    menu.push_back(item("Hide foobar2000", kHide));
+    menu.push_back(item(tr("Show foobar2000"), kShow));
+    menu.push_back(item(tr("Hide foobar2000"), kHide));
     menu.push_back(ui::MenuItem::sep());
-    menu.push_back(item("Exit", kExit));
+    menu.push_back(item(tr("Exit"), kExit));
     switch (ui::popup_menu_at_cursor(*m_main, menu)) {
     case kPlayPause: pc->play_or_pause(); break;
     case kStop:      pc->stop(); break;
@@ -163,8 +163,7 @@ bool SkinEngine::run_button_action(const std::string& action) {
         std::string sc = read_panel_script(file);
         if (sc.empty()) {
             ui::message_box(nullptr, "Panels UI",
-                            "This skin button opens a window whose script is missing:\n" +
-                            panels_dir() + "/" + file + ".txt");
+                            trf("This skin button opens a window whose script is missing:\n{0}", { panels_dir() + "/" + file + ".txt" }));
             return true;
         }
         m_popupFile = file;
@@ -207,7 +206,7 @@ bool SkinEngine::run_button_action(const std::string& action) {
         if (!m_main) return true;
         PrefsModel prefs(prefs_backend());
         prefs.load();
-        const std::string dir = ui::choose_folder(*m_main, prefs_text::kChooseFolder,
+        const std::string dir = ui::choose_folder(*m_main, tr(prefs_text::kChooseFolder),
                                                   folder_picker_start(prefs.pending().root, layout_skins_dir()));
         if (dir.empty()) return true;
         prefs.choose_skin_folder(dir);

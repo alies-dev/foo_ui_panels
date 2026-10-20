@@ -29,6 +29,7 @@ struct DiagnosticsInfo {
     bool onTop = false;
     bool showProblems = true;
     bool verboseLogging = false;
+    std::string uiLanguage;
     std::size_t pvarCount = 0;
 
     bool navidrome = false;

@@ -4,7 +4,7 @@
 
 namespace pui {
 
-static const char* kResultsPlaylist = "Search results";
+static const char* kResultsPlaylist = N_("Search results");
 enum { kTimerDebounce = 1, kDebounceMs = 350 };
 
 gfx::Color QuickSearch::col(const char* role, gfx::Color def) const {
@@ -16,7 +16,7 @@ void QuickSearch::on_attached() {
     st.text = col("text", gfx::Color(236, 238, 245));
     st.background = col("background", gfx::Color(26, 27, 32));
     st.font = gfx::FontSpec{ "Segoe UI", 13, false };
-    st.placeholder = "Search...";
+    st.placeholder = tr("Search...");
     m_edit = ui::create_text_field(*host(), this, st);
     gfx::Rect b = host()->bounds();
     on_resize(b.w, b.h);
@@ -67,7 +67,7 @@ void QuickSearch::run_search() {
     t_size resultsIdx = pfc_infinite;
     for (t_size i = 0, n = pm->get_playlist_count(); i < n; ++i) {
         pfc::string8 nm; pm->playlist_get_name(i, nm);
-        if (nm == kResultsPlaylist) { resultsIdx = i; continue; }
+        if (nm == tr(kResultsPlaylist)) { resultsIdx = i; continue; }
         metadb_handle_list items; pm->playlist_get_all_items(i, items);
         all.add_items(items);
     }
@@ -79,7 +79,7 @@ void QuickSearch::run_search() {
     for (t_size i = 0; i < all.get_count(); ++i) if (mask[i]) hits.add_item(all[i]);
 
     if (resultsIdx == pfc_infinite)
-        resultsIdx = pm->create_playlist(kResultsPlaylist, strlen(kResultsPlaylist), pfc_infinite);
+        resultsIdx = pm->create_playlist(tr(kResultsPlaylist), strlen(tr(kResultsPlaylist)), pfc_infinite);
     if (resultsIdx == pfc_infinite) return;
     pm->playlist_clear(resultsIdx);
     pm->playlist_add_items(resultsIdx, hits, bit_array_false());

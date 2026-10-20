@@ -1,4 +1,4 @@
-.PHONY: help build build-arm64ec build-x86 deploy launch run kill clean check-portable test skin-lint docs mac-build mac-vm mac-vm-open mac-vm-test mac-vm-skin mac-vm-navidrome mac-vm-navidrome-config \
+.PHONY: help build build-arm64ec build-x86 deploy launch run kill clean check-portable test i18n-check i18n-missing skin-lint docs mac-build mac-vm mac-vm-open mac-vm-test mac-vm-skin mac-vm-navidrome mac-vm-navidrome-config \
 	ui ui-smoke ui-compare mac-vm-smoke win11-smoke win11 win11-open win11-test win11-release win11-skin \
 	win-test win11-arm win11-arm-deploy win11-arm-skin win11-arm-test
 
@@ -15,6 +15,8 @@ help:
 	@echo "  clean     remove build/, build-arm64ec/, build-x86/ and build-mac/"
 	@echo "  check-portable  compile the platform-free sources (core/panels) for a non-Windows host"
 	@echo "  test            build + run the host-side unit tests (tests/, ASan/UBSan; Linux and macOS)"
+	@echo "  i18n-check      every tr()/N_() UI string has a Spanish entry (also run by the unit tests)"
+	@echo "  i18n-missing    print the UI strings that still lack a Spanish translation"
 	@echo "  win-test        the same unit tests built for Windows with clang-cl, run under wine (Linux)"
 	@echo "  skin-lint       build build/tools/skin_lint; LINT_DIR=<folder> also runs it on that skin"
 	@echo "  docs            regenerate docs/SCRIPT_FUNCTIONS.md from the engine's function table"
@@ -85,10 +87,17 @@ check-portable:
 test:
 	CXX_HOST=$(CXX_HOST) ./scripts/run-unit-tests.sh host
 
+i18n-check:
+	python3 scripts/i18n-check.py
+
+i18n-missing:
+	python3 scripts/i18n-check.py --missing
+
 win-test:
 	./scripts/run-unit-tests.sh win
 
-LINT_SRC = tools/skin_lint.cpp src/core/script_runtime.cpp src/core/script_util.cpp src/core/skin_config.cpp src/core/skin_lint.cpp
+LINT_SRC = tools/skin_lint.cpp src/core/script_runtime.cpp src/core/script_util.cpp src/core/skin_config.cpp src/core/skin_lint.cpp \
+           src/core/i18n.cpp src/core/i18n_spanish.cpp
 LINT_BIN = build/tools/skin_lint
 $(LINT_BIN): $(LINT_SRC) $(wildcard src/core/*.h)
 	@mkdir -p $(dir $(LINT_BIN))

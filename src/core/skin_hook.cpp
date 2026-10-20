@@ -219,7 +219,7 @@ void SkinEngine::describe(DiagnosticsInfo& d) const {
     for (const auto& [name, slot] : m_panels) d.panels.emplace_back(name, panel_kind_name(slot.kind));
     for (const auto& [label, list] : m_problems) {
         std::vector<std::string> msgs;
-        for (const auto& p : list) msgs.push_back(std::string(p.serious ? "" : "(minor) ") + p.msg);
+        for (const auto& p : list) msgs.push_back(std::string(p.serious ? "" : "(minor) ") + p.text());
         if (!msgs.empty()) d.problems.emplace_back(label, std::move(msgs));
     }
 }
@@ -239,7 +239,7 @@ void SkinEngine::diagnose_script(const std::string& where, const std::string& te
     };
     if (!unknown.empty()) {
         report_once("" + where + ": unsupported function(s), rendered as errors: " + join(unknown));
-        m_problems[where].push_back({ "Uses functions nothing installed knows (drawn as errors if reached): " + join(unknown), false });
+        m_problems[where].push_back({ N_("Uses functions nothing installed knows (drawn as errors if reached)"), false, join(unknown) });
     }
     if (!stubbed.empty())
         report_once("" + where + ": not implemented yet, ignored: " + join(stubbed));

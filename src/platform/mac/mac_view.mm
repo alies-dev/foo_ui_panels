@@ -7,6 +7,7 @@
 #include "../../core/ui_logic.h"
 #include "../../core/ui_settings.h"
 #include "../../core/skin_lint.h"
+#include "../../core/i18n.h"
 #include <map>
 #include <string>
 #include <sys/stat.h>
@@ -480,7 +481,7 @@ void update_editor_status(Editor& ed) {
     int line, col;
     pui::line_col_utf16(u, ed.text.selectedRange.location, line, col);
     const bool plain = [str lengthOfBytesUsingEncoding:NSUTF8StringEncoding] > pui::kEditorHighlightMax;
-    ed.status.stringValue = ns(pui::editor_status(line, col, ed.check, "\xe2\x8c\x98S: apply", plain));
+    ed.status.stringValue = ns(pui::editor_status(line, col, ed.check, pui::tr("\xe2\x8c\x98S: apply"), plain));
 }
 
 void recheck_editor(Editor& ed) {
@@ -642,9 +643,9 @@ void track_context_menu(ViewHost& anchor, int x, int y, const metadb_handle_list
 
 bool choose_color(ViewHost*, gfx::Color& c) {
     NSAlert* a = [NSAlert new];
-    a.messageText = @"Choose a colour";
+    a.messageText = ns(pui::tr("Choose a colour"));
     [a addButtonWithTitle:@"OK"];
-    [a addButtonWithTitle:@"Cancel"];
+    [a addButtonWithTitle:ns(pui::tr("Cancel"))];
     NSColorWell* well = [[NSColorWell alloc] initWithFrame:NSMakeRect(0, 0, 120, 32)];
     well.color = color_of(c);
     a.accessoryView = well;
@@ -706,6 +707,11 @@ std::string os_version() {
 
 std::string wine_version() { return {}; }
 
+std::string system_language() {
+    NSString* lang = NSLocale.preferredLanguages.firstObject;
+    return lang ? std::string(lang.UTF8String) : std::string();
+}
+
 std::string home_dir() {
     NSString* h = NSHomeDirectory();
     return h.fileSystemRepresentation ? h.fileSystemRepresentation : "";
@@ -751,9 +757,9 @@ void open_text_editor(MainWindow&, const std::string& key, const std::string& ti
     act.key = new std::string(key);
     tv.delegate = act;
     struct { NSString* t; SEL s; NSString* key; NSEventModifierFlags mods; } btns[] = {
-        { @"Cancel", @selector(cancel:), @"\e", 0 },
+        { ns(pui::tr("Cancel")), @selector(cancel:), @"\e", 0 },
         { @"OK", @selector(ok:), @"\r", NSEventModifierFlagCommand },
-        { @"Apply", @selector(apply:), @"s", NSEventModifierFlagCommand } };
+        { ns(pui::tr("Apply")), @selector(apply:), @"s", NSEventModifierFlagCommand } };
     CGFloat x = W - pad - bw;
     for (auto& b : btns) {
         NSButton* btn = [NSButton buttonWithTitle:b.t target:act action:b.s];
@@ -764,7 +770,7 @@ void open_text_editor(MainWindow&, const std::string& key, const std::string& ti
         [content addSubview:btn];
         x -= bw + pad;
     }
-    NSButton* revert = [NSButton buttonWithTitle:@"Revert" target:act action:@selector(revert:)];
+    NSButton* revert = [NSButton buttonWithTitle:ns(pui::tr("Revert")) target:act action:@selector(revert:)];
     revert.frame = NSMakeRect(pad, pad, bw, bh);
     revert.autoresizingMask = NSViewMaxXMargin | NSViewMaxYMargin;
     [content addSubview:revert];

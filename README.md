@@ -157,6 +157,12 @@ it, a skin gets neutral defaults. Edits are picked up live, like script edits.
 
 ## What's implemented
 
+- **English and Spanish UI**: menus, Preferences, the native panels' menus and messages, the
+  welcome screen and the layout wizard follow the system language (Windows: the display
+  language; macOS: the first preferred language), or pick one in **Preferences › Display ›
+  Panels UI (reborn) › General › Language** and restart foobar2000. Skins draw their own text,
+  so a skin stays in the language it was written in. Log lines, *Copy Diagnostics* and the
+  skin linter's findings stay in English, since they go into bug reports.
 - A log (`foo_ui_panels.log`, verbose on request) and **Copy Diagnostics** in Preferences, for
   bug reports — see [Reporting a problem](#reporting-a-problem).
 - Full foobar2000 UI replacement on Windows (`user_interface` service, same slot as the Default
@@ -345,6 +351,11 @@ things smooth:
   they draw is intended, `UPDATE_GOLDEN=1 make test` regenerates them; review the diff. A new
   script function is a row in the table in `src/core/script_runtime.cpp` plus a call in
   `tests/skins/synthetic/synthetic.txt` (a test checks); run `make docs` after.
+- UI text goes through `tr("English text")` / `trf("… {0} …", { args })` / `N_()` (for a
+  constant used later), `src/core/i18n.h`: the English text is the key and
+  `src/core/i18n_spanish.cpp` holds the Spanish. `make test` first runs `make i18n-check`
+  (`scripts/i18n-check.py`), which fails on a string without a Spanish entry;
+  `make i18n-missing` lists them.
 - Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, …): they
   drive the automated releases (see [Releases](#releases)).
 - Update this README when you add or change a feature (e.g. *What's implemented*, *Roadmap*),

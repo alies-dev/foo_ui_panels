@@ -1,5 +1,7 @@
 #include "skin_templates.h"
 #include "fs_util.h"
+#include "i18n.h"
+#include "script_util.h"
 #include "skin_config.h"
 #include <filesystem>
 
@@ -20,14 +22,15 @@ $drawrect(0,0,%_width%,%_height%,brushcolor-24-25-30 pencolor-null)
 )PUI";
 }
 
-const char* kToolbar = R"PUI(
+std::string toolbar() {
+    return i18n::substitute(R"PUI(
 // ---- Toolbar: transport buttons, seek bar, volume, main menu -----------------------------------
 $drawrect(0,0,%_width%,40,brushcolor-36-38-46 pencolor-null)
 $font(Segoe UI Symbol,13,,225-228-235)
-$textbutton(6,4,32,32,⏮,,Previous,TOOLTIP,Previous)
-$textbutton(38,4,32,32,$if(%isplaying%,$if(%ispaused%,▶,⏸),▶),,Play,TOOLTIP,Play / pause)
-$textbutton(70,4,32,32,⏹,,Stop,TOOLTIP,Stop)
-$textbutton(102,4,32,32,⏭,,Next,TOOLTIP,Next)
+$textbutton(6,4,32,32,⏮,,Previous,TOOLTIP,{0})
+$textbutton(38,4,32,32,$if(%isplaying%,$if(%ispaused%,▶,⏸),▶),,Play,TOOLTIP,{1})
+$textbutton(70,4,32,32,⏹,,Stop,TOOLTIP,{2})
+$textbutton(102,4,32,32,⏭,,Next,TOOLTIP,{3})
 // The seek and volume bars are drawn here; the Seekbar/Volume panels over them take the clicks.
 $drawrect(148,18,$eval(%_width% - 300),4,brushcolor-52-55-64 pencolor-null)
 $if(%isplaying%,$ifgreater(%length_seconds%,0,$drawrect(148,18,$eval({%_width% - 300} * %playback_time_seconds% / %length_seconds%),4,brushcolor-0-120-215 pencolor-null),))
@@ -35,21 +38,24 @@ $drawrect($eval(%_width% - 136),18,90,4,brushcolor-52-55-64 pencolor-null)
 $drawrect($eval(%_width% - 136),18,$eval(90 * %panel_volume% / 1000),4,brushcolor-160-165-175 pencolor-null)
 $panel(Seekbar,Seekbar,148,12,$eval(%_width% - 300),16)
 $panel(Volume,Volume,$eval(%_width% - 136),12,90,16)
-$textbutton($eval(%_width% - 38),4,32,32,☰,,MENU,TOOLTIP,Menu)
-)PUI";
+$textbutton($eval(%_width% - 38),4,32,32,☰,,MENU,TOOLTIP,{4})
+)PUI", { tf_quote(tr("Previous")), tf_quote(tr("Play / pause")), tf_quote(tr("Stop")), tf_quote(tr("Next")), tf_quote(tr("Menu")) });
+}
 
-const char* kStatus = R"PUI(
+std::string status() {
+    return i18n::substitute(R"PUI(
 // ---- Status bar --------------------------------------------------------------------------------
 $drawrect(0,$eval(%_height% - 22),%_width%,22,brushcolor-36-38-46 pencolor-null)
 $font(Segoe UI,9)
-$drawstring($if(%isplaying%,$if(%ispaused%,Paused,Playing)   %codec%[   %bitrate% kbps]   %playback_time%[ / %length%],Stopped),10,$eval(%_height% - 19),$eval(%_width% - 20),18,150-155-165)
-)PUI";
+$drawstring($if(%isplaying%,$if(%ispaused%,{0},{1})   %codec%[   %bitrate% kbps]   %playback_time%[ / %length%],{2}),10,$eval(%_height% - 19),$eval(%_width% - 20),18,150-155-165)
+)PUI", { tf_quote(tr("Paused")), tf_quote(tr("Playing")), tf_quote(tr("Stopped")) });
+}
 
 std::string now_playing(const std::string& x, const std::string& y, const std::string& w) {
     auto at = [&](int dy) { return "$eval(" + y + " + " + std::to_string(dy) + ")"; };
     return "\n// ---- What's playing ----------------------------------------------------------------------------\n"
            "$font(Segoe UI,12,bold)\n"
-           "$drawstring($if(%isplaying%,%title%,Nothing playing)," + x + "," + y + "," + w + ",22,235-238-245)\n"
+           "$drawstring($if(%isplaying%,%title%," + tf_quote(tr("Nothing playing")) + ")," + x + "," + y + "," + w + ",22,235-238-245)\n"
            "$font(Segoe UI,10)\n"
            "$drawstring($if(%isplaying%,%artist%)," + x + "," + at(22) + "," + w + ",18,160-165-175)\n"
            "$drawstring($if(%isplaying%,%album%[ '('%date%')'])," + x + "," + at(40) + "," + w + ",18,120-125-135)\n";
@@ -78,58 +84,58 @@ color.volume.background = 52 55 64
 std::vector<SkinTemplate> build() {
     std::vector<SkinTemplate> t;
 
-    t.push_back({ "playlist-cover", "Playlist and cover", "Album art and track info beside the playlist.",
+    t.push_back({ "playlist-cover", N_("Playlist and cover"), N_("Album art and track info beside the playlist."),
         { { 0, 0, 100, 9, Part::Toolbar }, { 2, 12, 26, 34, Part::Cover }, { 30, 9, 70, 86, Part::Playlist },
           { 0, 95, 100, 5, Part::Status } },
-        std::string(header("Playlist and cover")) + kToolbar +
+        std::string(header("Playlist and cover")) + toolbar() +
             "\n// ---- Left: album art; right: the playlist ---------------------------------------------------\n"
             "$panel(Cover,Album Art,12,52,256,256)\n" +
             now_playing("12", "318", "256") +
             separator("280") +
-            "$panel(Playlist,Single Column Playlist,281,40,$eval(%_width% - 281),$eval(%_height% - 62))\n" + kStatus,
+            "$panel(Playlist,Single Column Playlist,281,40,$eval(%_width% - 281),$eval(%_height% - 62))\n" + status(),
         ini("Playlist and cover") });
 
-    t.push_back({ "library", "Library", "Playlists on the left, the playlist, album art on the right.",
+    t.push_back({ "library", N_("Library"), N_("Playlists on the left, the playlist, album art on the right."),
         { { 0, 0, 100, 9, Part::Toolbar }, { 0, 9, 22, 86, Part::Tree }, { 22, 9, 52, 86, Part::Playlist },
           { 76, 12, 22, 30, Part::Cover }, { 0, 95, 100, 5, Part::Status } },
-        std::string(header("Library")) + kToolbar +
+        std::string(header("Library")) + toolbar() +
             "\n// ---- Left: playlists; middle: the playlist; right: album art ----------------------------------\n"
             "$panel(Playlists,Playlist switcher,0,40,220,$eval(%_height% - 62))\n" +
             separator("220") +
             "$panel(Playlist,Single Column Playlist,221,40,$eval(%_width% - 482),$eval(%_height% - 62))\n" +
             separator("$eval(%_width% - 261)") +
             "$panel(Cover,Album Art,$eval(%_width% - 249),52,238,238)\n" +
-            now_playing("$eval(%_width% - 249)", "300", "238") + kStatus,
+            now_playing("$eval(%_width% - 249)", "300", "238") + status(),
         ini("Library") });
 
-    t.push_back({ "albums", "Album browser", "Your albums as a cover grid, the playlist beside it.",
+    t.push_back({ "albums", N_("Album browser"), N_("Your albums as a cover grid, the playlist beside it."),
         { { 0, 0, 100, 9, Part::Toolbar }, { 0, 9, 60, 86, Part::Albums }, { 60, 9, 40, 86, Part::Playlist },
           { 0, 95, 100, 5, Part::Status } },
-        std::string(header("Album browser")) + kToolbar +
+        std::string(header("Album browser")) + toolbar() +
             "\n// ---- Left: the album grid (right-click it for cover flow and sorting); right: the playlist ----\n"
             "$panel(Albums,Album list,0,40,$eval(%_width% * 3 / 5),$eval(%_height% - 62))\n" +
             separator("$eval(%_width% * 3 / 5)") +
             "$panel(Playlist,Single Column Playlist,$eval(%_width% * 3 / 5 + 1),40,$eval(%_width% - %_width% * 3 / 5 - 1),$eval(%_height% - 62))\n" +
-            kStatus,
+            status(),
         ini("Album browser") });
 
-    t.push_back({ "playlist", "Playlist", "Just the playlist, with the controls on top.",
+    t.push_back({ "playlist", N_("Playlist"), N_("Just the playlist, with the controls on top."),
         { { 0, 0, 100, 9, Part::Toolbar }, { 0, 9, 100, 86, Part::Playlist }, { 0, 95, 100, 5, Part::Status } },
-        std::string(header("Playlist")) + kToolbar +
+        std::string(header("Playlist")) + toolbar() +
             "\n// ---- The playlist ------------------------------------------------------------------------------\n"
-            "$panel(Playlist,Single Column Playlist,0,40,%_width%,$eval(%_height% - 62))\n" + kStatus,
+            "$panel(Playlist,Single Column Playlist,0,40,%_width%,$eval(%_height% - 62))\n" + status(),
         ini("Playlist") });
 
     const std::string S = "$min($eval(%_height% - 230),$eval(%_width% / 2 - 24))";
-    t.push_back({ "now-playing", "Now playing", "A large cover, synced lyrics and a spectrum.",
+    t.push_back({ "now-playing", N_("Now playing"), N_("A large cover, synced lyrics and a spectrum."),
         { { 0, 0, 100, 9, Part::Toolbar }, { 2, 12, 40, 56, Part::Cover }, { 45, 10, 53, 64, Part::Lyrics },
           { 0, 78, 100, 17, Part::Spectrum }, { 0, 95, 100, 5, Part::Status } },
-        std::string(header("Now playing")) + kToolbar +
+        std::string(header("Now playing")) + toolbar() +
             "\n// ---- Album art as large as the window allows, lyrics beside it, a spectrum below -------------\n"
             "$panel(Cover,Album Art,12,52," + S + "," + S + ")\n" +
             now_playing("12", "$eval(" + S + " + 60)", S) +
             "$panel(Lyrics,Lyric Show,$eval(" + S + " + 24),40,$eval(%_width% - " + S + " - 24),$eval(%_height% - 132))\n"
-            "$panel(Spectrum,Spectrum,0,$eval(%_height% - 88),%_width%,64)\n" + kStatus,
+            "$panel(Spectrum,Spectrum,0,$eval(%_height% - 88),%_width%,64)\n" + status(),
         ini("Now playing") });
 
     return t;
@@ -167,15 +173,20 @@ std::string layout_wizard_script() {
 $drawrect(0,0,%_width%,%_height%,brushcolor-22-24-30 pencolor-null)
 $gradientrect(0,0,%_width%,4,0-120-215,0-90-170)
 $font(Segoe UI,20,bold,240-240-240)
-$alignabs(28,22,$eval(%_width% - 56),34,left,top)Choose a layout
+$alignabs(28,22,$eval(%_width% - 56),34,left,top){0}
 $font(Segoe UI,10)
-$drawstring('Pick a starting point. It becomes a skin folder of its own, so anything in it can be changed later. Or use a skin you already have.',28,60,$eval(%_width% - 56),36,175-180-190,wrap)
+$drawstring({1},28,60,$eval(%_width% - 56),36,175-180-190,wrap)
 $drawroundrect(28,100,210,32,6,6,0-120-215)
 $drawroundrect(250,100,110,32,6,6,58-62-72)
 $font(Segoe UI,10,bold,255-255-255)
-$textbutton(28,100,210,32,Use my own skin folder...,,SKIN:CHOOSE_FOLDER,TOOLTIP,Load a skin from a folder)
-$textbutton(250,100,110,32,Close,,WIZARD:CLOSE)
+$textbutton(28,100,210,32,{2},,SKIN:CHOOSE_FOLDER,TOOLTIP,{3})
+$textbutton(250,100,110,32,{4},,WIZARD:CLOSE)
 )PUI";
+    s = i18n::substitute(s, { tf_quote(tr("Choose a layout")),
+                              tf_quote(tr("Pick a starting point. It becomes a skin folder of its own, so anything in it can be "
+                                          "changed later. Or use a skin you already have.")),
+                              tf_quote(tr("Use my own skin folder...")), tf_quote(tr("Load a skin from a folder")),
+                              tf_quote(tr("Close")) });
     const auto& ts = skin_templates();
     for (size_t i = 0; i < ts.size(); ++i) {
         const SkinTemplate& t = ts[i];
@@ -186,7 +197,7 @@ $textbutton(250,100,110,32,Close,,WIZARD:CLOSE)
         s += "$button2(" + e(X) + "," + e(Y) + ",0,0," + e(CW) + "," + e(CH) +
              ",'$drawroundrect(0,0," + e(CW) + "," + e(CH) + ",8,8,34-37-45)'" +
              ",'$drawroundrect(0,0," + e(CW) + "," + e(CH) + ",8,8,46-50-62)'" +
-             ",SKIN:TEMPLATE:" + t.id + ",'TOOLTIP:" + t.summary + "')\n";
+             ",SKIN:TEMPLATE:" + t.id + "," + tf_quote(std::string("TOOLTIP:") + tr(t.summary)) + ")\n";
         const std::string TX = "{" + X + " + 12}", TY = "{" + Y + " + 12}", TW = "{" + CW + " - 24}", TH = "{" + PH + " - 8}";
         s += "$drawrect(" + e(TX) + "," + e(TY) + "," + e(TW) + "," + e(TH) + ",brushcolor-24-25-30 pencolor-70-74-86)\n";
         for (const auto& b : t.thumbnail) {
@@ -198,9 +209,9 @@ $textbutton(250,100,110,32,Close,,WIZARD:CLOSE)
         s += "$imageabs(" + e(TX) + "," + e(TY) + "," + e(TW) + "," + e(TH) + ",builtin:wizard/" + t.id + ".png)\n";
         s += "$drawrect(" + e(TX) + "," + e(TY) + "," + e(TW) + "," + e(TH) + ",brushcolor-null pencolor-70-74-86)\n";
         s += "$font(Segoe UI,11,bold)\n";
-        s += "$drawstring(" + std::string(t.name) + "," + e(TX) + "," + e(Y + " + " + PH + " + 12") + "," + e(TW) + ",20,235-238-245)\n";
+        s += "$drawstring(" + tf_quote(tr(t.name)) + "," + e(TX) + "," + e(Y + " + " + PH + " + 12") + "," + e(TW) + ",20,235-238-245)\n";
         s += "$font(Segoe UI,9)\n";
-        s += "$drawstring('" + std::string(t.summary) + "'," + e(TX) + "," + e(Y + " + " + PH + " + 34") + "," + e(TW) +
+        s += "$drawstring(" + tf_quote(tr(t.summary)) + "," + e(TX) + "," + e(Y + " + " + PH + " + 34") + "," + e(TW) +
              ",34,150-155-165,wrap)\n";
     }
     return s;
@@ -210,16 +221,16 @@ std::string install_skin_template(const SkinTemplate& t, const std::string& pare
     std::error_code ec;
     std::filesystem::create_directories(fs_path(parent), ec);
     for (int n = 1; n < 1000; ++n) {
-        const std::string dir = parent + kPathSep + t.name + (n > 1 ? " " + std::to_string(n) : std::string());
+        const std::string dir = parent + kPathSep + tr(t.name) + (n > 1 ? " " + std::to_string(n) : std::string());
         if (std::filesystem::exists(fs_path(dir), ec)) continue;
         if (!std::filesystem::create_directory(fs_path(dir), ec) ||
             !write_file(dir + kPathSep + "main.txt", t.script) || !write_file(dir + kPathSep + SkinConfig::kFileName, t.ini)) {
-            if (err) *err = "Couldn't write the layout to " + dir;
+            if (err) *err = trf("Couldn't write the layout to {0}", { dir });
             return {};
         }
         return dir;
     }
-    if (err) *err = "No free folder name under " + parent;
+    if (err) *err = trf("No free folder name under {0}", { parent });
     return {};
 }
 

@@ -11,9 +11,22 @@ const GUID g_group_panels = { 0xb2d74e19, 0x5c3a, 0x4f86, { 0x9e, 0x17, 0x0a, 0x
 const GUID g_group_skins = { 0xc7a15f3e, 0x2d84, 0x4b69, { 0x8f, 0x01, 0x5e, 0x3b, 0x9a, 0x7c, 0x6d, 0x24 } };
 const GUID g_group_skin_cmds = { 0xd4e82a61, 0x7b9f, 0x4c35, { 0xa6, 0xd0, 0x1f, 0x8e, 0x3c, 0x5b, 0x9a, 0x72 } };
 
-FB2K_DECLARE_MAINMENU_GROUP_POPUP(g_group_panels, mainmenu_groups::view, mainmenu_commands::sort_priority_dontcare, "Panels UI");
-FB2K_DECLARE_MAINMENU_GROUP_POPUP(g_group_skins, g_group_panels, mainmenu_commands::sort_priority_base + 1, "Skin");
-FB2K_DECLARE_MAINMENU_GROUP_POPUP(g_group_skin_cmds, g_group_panels, mainmenu_commands::sort_priority_base + 2, "Skin commands");
+class translated_group : public mainmenu_group_popup {
+public:
+    translated_group(const GUID& id, const GUID& parent, t_uint32 priority, const char* name)
+        : m_id(id), m_parent(parent), m_priority(priority), m_name(name) {}
+    GUID get_guid() override { return m_id; }
+    GUID get_parent() override { return m_parent; }
+    t_uint32 get_sort_priority() override { return m_priority; }
+    void get_display_string(pfc::string_base& out) override { out = tr(m_name); }
+private:
+    GUID m_id, m_parent;
+    t_uint32 m_priority;
+    const char* m_name;
+};
+FB2K_SERVICE_FACTORY_PARAMS(translated_group, g_group_panels, mainmenu_groups::view, mainmenu_commands::sort_priority_dontcare, "Panels UI");
+FB2K_SERVICE_FACTORY_PARAMS(translated_group, g_group_skins, g_group_panels, mainmenu_commands::sort_priority_base + 1, N_("Skin"));
+FB2K_SERVICE_FACTORY_PARAMS(translated_group, g_group_skin_cmds, g_group_panels, mainmenu_commands::sort_priority_base + 2, N_("Skin commands"));
 
 SkinEngine* engine() { return SkinEngine::live().empty() ? nullptr : SkinEngine::live().front(); }
 
@@ -33,23 +46,23 @@ class panels_commands : public mainmenu_commands {
     struct Entry { Cmd cmd; GUID id; const char* name; const char* desc; };
     static const std::vector<Entry>& entries() {
         static const std::vector<Entry> e = {
-            { kMini, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x02 } }, "Mini mode",
-              "Switches between the skin's compact layout and the full window (skins that declare one)." },
-            { kZoomIn, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x03 } }, "Zoom in",
-              "Makes the whole skin bigger." },
-            { kZoomOut, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x04 } }, "Zoom out",
-              "Makes the whole skin smaller." },
-            { kZoomReset, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x05 } }, "Reset zoom",
-              "Back to automatic zoom (the system's display scaling)." },
-            { kReload, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x06 } }, "Reload skin",
-              "Reloads the active skin from disk." },
-            { kProblems, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x07 } }, "Show script problems",
-              "Marks panels whose script doesn't compile, is missing or uses unknown functions." },
-            { kWizard, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x08 } }, "Layout wizard...",
-              "Start from a ready-made layout, or pick a skin folder." },
+            { kMini, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x02 } }, N_("Mini mode"),
+              N_("Switches between the skin's compact layout and the full window (skins that declare one).") },
+            { kZoomIn, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x03 } }, N_("Zoom in"),
+              N_("Makes the whole skin bigger.") },
+            { kZoomOut, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x04 } }, N_("Zoom out"),
+              N_("Makes the whole skin smaller.") },
+            { kZoomReset, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x05 } }, N_("Reset zoom"),
+              N_("Back to automatic zoom (the system's display scaling).") },
+            { kReload, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x06 } }, N_("Reload skin"),
+              N_("Reloads the active skin from disk.") },
+            { kProblems, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x07 } }, N_("Show script problems"),
+              N_("Marks panels whose script doesn't compile, is missing or uses unknown functions.") },
+            { kWizard, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x08 } }, N_("Layout wizard..."),
+              N_("Start from a ready-made layout, or pick a skin folder.") },
 #ifdef __APPLE__
-            { kOnTop, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x01 } }, "Always on top",
-              "Keeps the player window above other windows." },
+            { kOnTop, { 0xe1a4c2b0, 0x3f51, 0x4d7a, { 0x9b, 0x26, 0x4c, 0x8e, 0x1d, 0x6f, 0x3a, 0x01 } }, N_("Always on top"),
+              N_("Keeps the player window above other windows.") },
 #endif
         };
         return e;
@@ -57,10 +70,10 @@ class panels_commands : public mainmenu_commands {
 public:
     t_uint32 get_command_count() override { return (t_uint32)entries().size(); }
     GUID get_command(t_uint32 i) override { return i < entries().size() ? entries()[i].id : pfc::guid_null; }
-    void get_name(t_uint32 i, pfc::string_base& out) override { out = i < entries().size() ? entries()[i].name : ""; }
+    void get_name(t_uint32 i, pfc::string_base& out) override { out = i < entries().size() ? tr(entries()[i].name) : ""; }
     bool get_description(t_uint32 i, pfc::string_base& out) override {
         if (i >= entries().size()) return false;
-        out = entries()[i].desc;
+        out = tr(entries()[i].desc);
         return true;
     }
     GUID get_parent() override { return g_group_panels; }
@@ -77,8 +90,8 @@ public:
             break;
         case kZoomReset: {
             const int pct = effective_zoom_percent();
-            pfc::string8 t; t << "Reset zoom (now " << pct << "%" << (zoom_setting() == 0 ? ", automatic)" : ")");
-            text = t;
+            const std::string now = std::to_string(pct);
+            text = (zoom_setting() == 0 ? trf("Reset zoom (now {0}%, automatic)", { now }) : trf("Reset zoom (now {0}%)", { now })).c_str();
             if (zoom_setting() == 0) flags |= flag_disabled;
             break;
         }
@@ -113,7 +126,7 @@ public:
     void get_name(t_uint32 i, pfc::string_base& out) override { out = i < m_skins.size() ? m_skins[i].c_str() : ""; }
     bool get_description(t_uint32 i, pfc::string_base& out) override {
         if (i >= m_skins.size()) return false;
-        out = "Switches Panels UI to this skin.";
+        out = tr("Switches Panels UI to this skin.");
         return true;
     }
     GUID get_parent() override { return g_group_skins; }
@@ -147,7 +160,7 @@ public:
     void get_name(t_uint32 i, pfc::string_base& out) override { out = i < m_cmds.size() ? m_cmds[i].first.c_str() : ""; }
     bool get_description(t_uint32 i, pfc::string_base& out) override {
         if (i >= m_cmds.size()) return false;
-        out = "Skin command: "; out += m_cmds[i].second.c_str();
+        out = trf("Skin command: {0}", { m_cmds[i].second }).c_str();
         return true;
     }
     GUID get_parent() override { return g_group_skin_cmds; }

@@ -56,9 +56,9 @@ void LibraryTree::load_local() {
     for (t_size i = 0; i < all.get_count(); ++i) {
         std::string artist = fmt(all[i], "[%album artist%]").c_str();
         if (artist.empty()) artist = fmt(all[i], "[%artist%]").c_str();
-        if (artist.empty()) artist = "Unknown artist";
+        if (artist.empty()) artist = tr("Unknown artist");
         std::string album = fmt(all[i], "[%album%]").c_str();
-        if (album.empty()) album = "(no album)";
+        if (album.empty()) album = tr("(no album)");
         Artist& ar = artist_for(artist);
         Album* found = nullptr;
         for (auto& al : ar.albums) if (!al.remote && lower_str(al.name) == lower_str(album)) { found = &al; break; }
@@ -85,7 +85,7 @@ void LibraryTree::start_remote_load() {
             }
         } sink;
         pfc::string8 err; bool ok = false;
-        try { ok = api->list_albums(sink, *abort, err); } catch (...) { err = "Navidrome library request failed."; }
+        try { ok = api->list_albums(sink, *abort, err); } catch (...) { err = N_("Navidrome library request failed."); }
         auto shared = std::make_shared<std::vector<RemoteAlbum>>(std::move(sink.all));
         std::string errs = ok ? std::string() : std::string(err.c_str());
         if (!ok) log::warn("navidrome", "album list request failed: " + errs);
@@ -138,15 +138,15 @@ void LibraryTree::refresh_tree() {
 
     auto pm = playlist_manager::get();
     const t_size np = pm->get_playlist_count();
-    int pls = add(-1, "Playlists", kPlaylists);
+    int pls = add(-1, tr("Playlists"), kPlaylists);
     for (t_size i = 0; i < np; ++i) {
         pfc::string8 nm; pm->playlist_get_name(i, nm);
         add(pls, std::string(nm.c_str()) + "  (" + std::to_string(pm->playlist_get_item_count(i)) + ")", kPlaylist, (int)i);
     }
-    if (m_remote_loading) add(-1, "Loading Navidrome library...", kLoading);
-    else if (!m_remote_err.empty()) add(-1, m_remote_err, kLoading);
+    if (m_remote_loading) add(-1, tr("Loading Navidrome library..."), kLoading);
+    else if (!m_remote_err.empty()) add(-1, tr(m_remote_err), kLoading);
     if (m_artists.empty() && !m_remote_loading)
-        add(-1, "No music found (Media Library empty, Navidrome not available)", kLoading);
+        add(-1, tr("No music found (Media Library empty, Navidrome not available)"), kLoading);
 
     for (size_t a = 0; a < m_artists.size(); ++a) {
         const Artist& ar = m_artists[a];
@@ -272,7 +272,7 @@ void LibraryTree::play_album(const Album& al, bool replace) {
     metadb_handle_list list; for (auto& h : al.items) list.add_item(h);
     auto pm = playlist_manager::get();
     if (replace) {
-        static const char* kName = "Album Browser";
+        const char* kName = tr("Album Browser");
         t_size n = pm->get_playlist_count(), target = pfc_infinite;
         for (t_size i = 0; i < n; ++i) { pfc::string8 nm; pm->playlist_get_name(i, nm); if (nm == kName) { target = i; break; } }
         if (target == pfc_infinite) target = pm->create_playlist(kName, strlen(kName), pfc_infinite);
@@ -319,12 +319,12 @@ void LibraryTree::context_menu(int item, int x, int y) {
     auto mi = [](const char* label, int id) { ui::MenuItem m; m.label = label; m.id = id; return m; };
     ui::Menu menu;
     if (n.kind == kArtist) {
-        menu.push_back(mi("Play artist", 4));
-        menu.push_back(mi("Add artist to current playlist", 5));
+        menu.push_back(mi(tr("Play artist"), 4));
+        menu.push_back(mi(tr("Add artist to current playlist"), 5));
     } else if (n.kind == kAlbum) {
-        menu.push_back(mi("Play album", 1));
-        menu.push_back(mi("Add to current playlist", 2));
-    } else menu.push_back(mi("Switch to this playlist", 3));
+        menu.push_back(mi(tr("Play album"), 1));
+        menu.push_back(mi(tr("Add to current playlist"), 2));
+    } else menu.push_back(mi(tr("Switch to this playlist"), 3));
     const int cmd = ui::popup_menu(host(), x, y, menu);
     if (cmd == 1 || cmd == 2) play_album(m_artists[n.a].albums[n.b], cmd == 1);
     else if (cmd == 3) activate(item);

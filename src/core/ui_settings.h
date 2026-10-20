@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 namespace pui {
 
@@ -15,6 +16,9 @@ void set_show_script_problems(bool on);
 
 bool verbose_logging();
 void set_verbose_logging(bool on);
+
+std::string ui_language();
+void set_ui_language(const std::string& code);
 
 void apply_view_settings();
 

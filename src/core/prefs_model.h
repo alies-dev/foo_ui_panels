@@ -1,5 +1,6 @@
 #pragma once
 #include "../gfx/canvas.h"
+#include "i18n.h"
 #include "pvars.h"
 #include <string>
 #include <utility>
@@ -14,9 +15,10 @@ struct PrefsSettings {
     int zoom = 0;
     bool onTop = false;
     bool verbose = false;
+    std::string language;
     PvarMap pvars;
     bool operator==(const PrefsSettings& o) const {
-        return root == o.root && active == o.active && main == o.main && zoom == o.zoom && onTop == o.onTop && verbose == o.verbose &&
+        return root == o.root && active == o.active && main == o.main && zoom == o.zoom && onTop == o.onTop && verbose == o.verbose && language == o.language &&
                serialize_pvars(pvars) == serialize_pvars(o.pvars);
     }
 };
@@ -33,47 +35,59 @@ struct PrefsBackend {
 };
 
 namespace prefs_text {
-inline constexpr const char* kTabs[] = { "General", "Script", "Variables", "Overrides", "Diagnostics" };
-inline constexpr const char* kRoot = "Skins root folder:";
-inline constexpr const char* kChooseFolder = "Choose a skin folder, or a folder with one skin per subfolder";
-inline constexpr const char* kSkin = "Active skin:";
-inline constexpr const char* kMain = "Main script:";
-inline constexpr const char* kZoom = "Zoom:";
-inline constexpr const char* kZoomAutoScaled = "Automatic (display scaling)";
-inline constexpr const char* kZoomAuto100 = "Automatic (100%)";
-inline constexpr const char* kOnTop = "Keep the player window on top of other windows";
-inline constexpr const char* kWizard = "Layout wizard...";
-inline constexpr const char* kWizardNote = "Start again from a ready-made layout.";
-inline constexpr const char* kWizardUnavailable = "The layout wizard runs in the Panels UI player window, which isn't open: "
-                                                  "pick Panels UI as the user interface first.";
-inline constexpr const char* kOwnFolder = "(the component's own folder)";
-inline constexpr const char* kAutomatic = "(automatic)";
-inline constexpr const char* kNoPreview = "No preview yet: a skin gets one the first time it is shown.";
-inline constexpr const char* kScript = "Active skin's main script:";
-inline constexpr const char* kVarsNote = "Persistent variables ($getpvar/$setpvar) the skin uses. Double-click a value to edit it.";
-inline constexpr const char* kVarsFind = "Find the skin's variables";
-inline constexpr const char* kVariable = "Variable";
-inline constexpr const char* kValue = "Value";
-inline constexpr const char* kOverridesNote = "Fallbacks used when the active skin doesn't set its own font / accent colour. "
-                                              "Leave blank to defer to the skin.";
-inline constexpr const char* kFontFace = "Font face:";
-inline constexpr const char* kFontSize = "Size:";
-inline constexpr const char* kAccent = "Accent colour:";
-inline constexpr const char* kClearOverrides = "Clear overrides";
-inline constexpr const char* kDiagNote = "Found a bug? Turn on verbose logging, make the problem happen again, then "
+inline constexpr const char* kTabs[] = { N_("General"), N_("Script"), N_("Variables"), N_("Overrides"), N_("Diagnostics") };
+inline constexpr const char* kRoot = N_("Skins root folder:");
+inline constexpr const char* kChooseFolder = N_("Choose a skin folder, or a folder with one skin per subfolder");
+inline constexpr const char* kSkin = N_("Active skin:");
+inline constexpr const char* kMain = N_("Main script:");
+inline constexpr const char* kZoom = N_("Zoom:");
+inline constexpr const char* kLanguage = N_("Language:");
+inline constexpr const char* kLanguageNote = N_("Restart foobar2000 to apply a new language.");
+inline constexpr const char* kZoomAutoScaled = N_("Automatic (display scaling)");
+inline constexpr const char* kZoomAuto100 = N_("Automatic (100%)");
+inline constexpr const char* kOnTop = N_("Keep the player window on top of other windows");
+inline constexpr const char* kWizard = N_("Layout wizard...");
+inline constexpr const char* kWizardNote = N_("Start again from a ready-made layout.");
+inline constexpr const char* kWizardUnavailable = N_("The layout wizard runs in the Panels UI player window, which isn't open: "
+                                                  "pick Panels UI as the user interface first.");
+inline constexpr const char* kOwnFolder = N_("(the component's own folder)");
+inline constexpr const char* kAutomatic = N_("(automatic)");
+inline constexpr const char* kNoPreview = N_("No preview yet: a skin gets one the first time it is shown.");
+inline constexpr const char* kScript = N_("Active skin's main script:");
+inline constexpr const char* kVarsNote = N_("Persistent variables ($getpvar/$setpvar) the skin uses. Double-click a value to edit it.");
+inline constexpr const char* kVarsFind = N_("Find the skin's variables");
+inline constexpr const char* kVariable = N_("Variable");
+inline constexpr const char* kValue = N_("Value");
+inline constexpr const char* kOverridesNote = N_("Fallbacks used when the active skin doesn't set its own font / accent colour. "
+                                              "Leave blank to defer to the skin.");
+inline constexpr const char* kFontFace = N_("Font face:");
+inline constexpr const char* kFontSize = N_("Size:");
+inline constexpr const char* kAccent = N_("Accent colour:");
+inline constexpr const char* kClearOverrides = N_("Clear overrides");
+inline constexpr const char* kDiagNote = N_("Found a bug? Turn on verbose logging, make the problem happen again, then "
                                          "copy the diagnostics and paste them into a new GitHub issue. Paths have your "
-                                         "user name replaced; nothing is sent anywhere by itself.";
-inline constexpr const char* kVerbose = "Verbose logging (for bug reports)";
-inline constexpr const char* kVerboseNote = "Without it, only warnings and errors go to the log file.";
-inline constexpr const char* kCopyDiagnostics = "Copy Diagnostics";
-inline constexpr const char* kCopied = "Copied to the clipboard. Paste it into the bug report.";
-inline constexpr const char* kCopyFailed = "Couldn't copy the diagnostics to the clipboard.";
-inline constexpr const char* kOpenLogFolder = "Open Log Folder";
-inline constexpr const char* kShowLog = "Show Log in Finder";
-inline constexpr const char* kReportIssue = "Report an Issue...";
-inline constexpr const char* kLogFile = "Log file:";
-inline constexpr const char* kNoLog = "(not open yet)";
-inline constexpr const char* kAuthor = "Author: Santiago Rodriguez";
+                                         "user name replaced; nothing is sent anywhere by itself.");
+inline constexpr const char* kVerbose = N_("Verbose logging (for bug reports)");
+inline constexpr const char* kVerboseNote = N_("Without it, only warnings and errors go to the log file.");
+inline constexpr const char* kCopyDiagnostics = N_("Copy Diagnostics");
+inline constexpr const char* kCopied = N_("Copied to the clipboard. Paste it into the bug report.");
+inline constexpr const char* kCopyFailed = N_("Couldn't copy the diagnostics to the clipboard.");
+inline constexpr const char* kOpenLogFolder = N_("Open Log Folder");
+inline constexpr const char* kShowLog = N_("Show Log in Finder");
+inline constexpr const char* kReportIssue = N_("Report an Issue...");
+inline constexpr const char* kLogFile = N_("Log file:");
+inline constexpr const char* kNoLog = N_("(not open yet)");
+inline constexpr const char* kBrowse = N_("Browse...");
+inline constexpr const char* kChoose = N_("Choose…");
+inline constexpr const char* kClear = N_("Clear");
+inline constexpr const char* kNoRoot = N_("(none: the component's own folder)");
+inline constexpr const char* kSave = N_("Save");
+inline constexpr const char* kRevert = N_("Revert");
+inline constexpr const char* kPickFont = N_("Pick font...");
+inline constexpr const char* kPickColour = N_("Pick colour...");
+inline constexpr const char* kUseSkinAccent = N_("Use the skin's");
+inline constexpr const char* kSkinDefault = N_("the skin's");
+inline constexpr const char* kAuthor = N_("Author: Santiago Rodriguez");
 inline constexpr const char* kSourceUrl = "https://github.com/santiagorod92/foo_ui_panels";
 }
 
@@ -123,6 +137,10 @@ public:
     void set_zoom_index(int i);
     void set_on_top(bool on) { m_now.onTop = on; }
     void set_verbose(bool on) { m_now.verbose = on; }
+
+    static std::vector<std::string> language_labels();
+    int language_index() const;
+    void set_language_index(int i);
 
     std::string diagnostics() const { return m_b.diagnostics(); }
     std::string log_path() const { return m_b.log_path(); }

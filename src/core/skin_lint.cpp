@@ -1,4 +1,5 @@
 #include "skin_lint.h"
+#include "i18n.h"
 #include "fs_util.h"
 #include "script_runtime.h"
 #include "script_util.h"
@@ -326,9 +327,9 @@ std::string problems_summary(const std::vector<std::string>& problems) {
 }
 
 std::string editor_status(int line, int col, const std::string& summary, const std::string& apply_hint, bool plain) {
-    return "Ln " + std::to_string(line) + ", Col " + std::to_string(col) + "    " +
-           (summary.empty() ? "No problems found" : summary) + "    " + apply_hint +
-           (plain ? "    (long script: no colouring)" : "");
+    return trf("Ln {0}, Col {1}", { std::to_string(line), std::to_string(col) }) + "    " +
+           (summary.empty() ? std::string(tr("No problems found")) : summary) + "    " + apply_hint +
+           (plain ? "    " + std::string(tr("(long script: no colouring)")) : std::string());
 }
 
 std::string format_findings(const std::vector<LintFinding>& findings) {

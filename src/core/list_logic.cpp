@@ -1,4 +1,5 @@
 #include "list_logic.h"
+#include "i18n.h"
 #include "../ui/keys.h"
 #include <algorithm>
 #include <cctype>
@@ -175,10 +176,10 @@ std::vector<HeaderColumn> playlist_header_columns(int view_w, bool stars) {
     const int lengthX = std::max(albumW, view_w - 50);
     const int ratingX = stars ? std::max(albumW, star_strip(view_w).x - 4) : lengthX;
     std::vector<HeaderColumn> v;
-    v.push_back({ PlaylistColumn::Album, 0, albumW, "Album" });
-    v.push_back({ PlaylistColumn::Title, albumW, ratingX - albumW, "Title" });
-    if (stars) v.push_back({ PlaylistColumn::Rating, ratingX, lengthX - ratingX, "Rating" });
-    v.push_back({ PlaylistColumn::Length, lengthX, std::max(0, view_w - lengthX), "Length" });
+    v.push_back({ PlaylistColumn::Album, 0, albumW, tr("Album") });
+    v.push_back({ PlaylistColumn::Title, albumW, ratingX - albumW, tr("Title") });
+    if (stars) v.push_back({ PlaylistColumn::Rating, ratingX, lengthX - ratingX, tr("Rating") });
+    v.push_back({ PlaylistColumn::Length, lengthX, std::max(0, view_w - lengthX), tr("Length") });
     return v;
 }
 

@@ -1,6 +1,7 @@
 #include "ui_settings.h"
 #include "ui_logic.h"
 #include "skin_engine.h"
+#include "i18n.h"
 #include "log.h"
 #include <cmath>
 
@@ -18,6 +19,12 @@ cfg_var_modern::cfg_bool g_problems_cfg(g_problems_guid, true);
 
 const GUID g_verbose_guid = { 0x2f6c9a41, 0x7d3e, 0x4b58, { 0x91, 0xa7, 0x0c, 0x5e, 0x3b, 0x82, 0xd4, 0x16 } };
 cfg_var_modern::cfg_bool g_verbose_cfg(g_verbose_guid, false);
+
+const GUID g_language_guid = { 0x7a3e5c18, 0x9d42, 0x4b6f, { 0xa1, 0x8c, 0x2e, 0x5d, 0x7f, 0x30, 0xb9, 0x64 } };
+cfg_var_modern::cfg_string g_language_cfg(g_language_guid, "");
+
+i18n::Language resolve_ui_language() { return i18n::resolve_language(ui_language(), ui::system_language()); }
+[[maybe_unused]] const bool g_language_resolver = (i18n::set_resolver(&resolve_ui_language), true);
 
 bool ontop_object(config_object::ptr& out) {
     return config_object::g_find(out, standard_config_objects::bool_ui_always_on_top);
@@ -61,6 +68,12 @@ void set_verbose_logging(bool on) {
     if (on != g_verbose_cfg.get()) log::note("prefs", std::string("verbose logging ") + (on ? "on" : "off"));
     g_verbose_cfg.set(on);
     log::Logger::get().set_verbose(on);
+}
+
+std::string ui_language() { return g_language_cfg.get().c_str(); }
+void set_ui_language(const std::string& code) {
+    if (code != ui_language()) log::note("prefs", "UI language set to " + (code.empty() ? std::string("automatic") : code) + ", applies after a restart");
+    g_language_cfg.set(code.c_str());
 }
 
 int effective_zoom_percent() {

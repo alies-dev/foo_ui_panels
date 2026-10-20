@@ -14,7 +14,7 @@
 namespace {
 
 NSString* ns(const std::string& s) { return [NSString stringWithUTF8String:s.c_str()] ?: @""; }
-NSString* ns(const char* s) { return [NSString stringWithUTF8String:s] ?: @""; }
+NSString* ns(const char* s) { return [NSString stringWithUTF8String:pui::tr(s)] ?: @""; }
 namespace text = pui::prefs_text;
 
 void fill_popup(NSPopUpButton* p, const std::vector<std::string>& labels, int sel) {
@@ -64,6 +64,7 @@ NSStackView* column(NSArray<NSView*>* views) {
     NSImageView* _preview;
     NSTextField* _previewNote;
     NSPopUpButton* _zoomPopup;
+    NSPopUpButton* _languagePopup;
     NSButton* _onTopCheck;
     NSTextField* _rootNote;
     NSTextView* _scriptView;
@@ -119,8 +120,8 @@ NSStackView* column(NSArray<NSView*>* views) {
     _rootField.lineBreakMode = NSLineBreakByTruncatingMiddle;
     [_rootField setContentCompressionResistancePriority:NSLayoutPriorityDefaultLow
                                          forOrientation:NSLayoutConstraintOrientationHorizontal];
-    NSButton* choose = [NSButton buttonWithTitle:@"Choose…" target:self action:@selector(chooseRoot:)];
-    NSButton* clearRoot = [NSButton buttonWithTitle:@"Clear" target:self action:@selector(clearRoot:)];
+    NSButton* choose = [NSButton buttonWithTitle:ns(text::kChoose) target:self action:@selector(chooseRoot:)];
+    NSButton* clearRoot = [NSButton buttonWithTitle:ns(text::kClear) target:self action:@selector(clearRoot:)];
     NSStackView* rootRow = [NSStackView stackViewWithViews:@[ _rootField, choose, clearRoot ]];
 
     _skinPopup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
@@ -133,6 +134,10 @@ NSStackView* column(NSArray<NSView*>* views) {
     _zoomPopup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
     _zoomPopup.target = self; _zoomPopup.action = @selector(zoomChanged:);
     fill_popup(_zoomPopup, pui::PrefsModel::zoom_labels(text::kZoomAuto100), 0);
+    _languagePopup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
+    _languagePopup.target = self; _languagePopup.action = @selector(languageChanged:);
+    fill_popup(_languagePopup, pui::PrefsModel::language_labels(), 0);
+    _languagePopup.toolTip = ns(text::kLanguageNote);
     _onTopCheck = [NSButton checkboxWithTitle:ns(text::kOnTop) target:self action:@selector(onTopChanged:)];
     NSButton* wizardRow = [NSButton buttonWithTitle:ns(text::kWizard) target:self action:@selector(openWizard:)];
     wizardRow.toolTip = ns(text::kWizardNote);
@@ -143,6 +148,8 @@ NSStackView* column(NSArray<NSView*>* views) {
         @[ label(ns(text::kMain)), _mainPopup ],
         @[ [NSGridCell emptyContentView], _warning ],
         @[ label(ns(text::kZoom)), _zoomPopup ],
+        @[ label(ns(text::kLanguage)), _languagePopup ],
+        @[ [NSGridCell emptyContentView], note(ns(text::kLanguageNote)) ],
         @[ [NSGridCell emptyContentView], _onTopCheck ],
         @[ [NSGridCell emptyContentView], wizardRow ],
     ]];
@@ -181,10 +188,10 @@ NSStackView* column(NSArray<NSView*>* views) {
     _scriptView.allowsUndo = YES;
     [scroll.heightAnchor constraintGreaterThanOrEqualToConstant:300].active = YES;
     _scriptPathLabel = note(@"");
-    NSButton* save = [NSButton buttonWithTitle:@"Save" target:self action:@selector(saveScript:)];
+    NSButton* save = [NSButton buttonWithTitle:ns(text::kSave) target:self action:@selector(saveScript:)];
     save.keyEquivalent = @"s";
     save.keyEquivalentModifierMask = NSEventModifierFlagCommand;
-    NSButton* revert = [NSButton buttonWithTitle:@"Revert" target:self action:@selector(revertScript:)];
+    NSButton* revert = [NSButton buttonWithTitle:ns(text::kRevert) target:self action:@selector(revertScript:)];
     NSStackView* buttons = [NSStackView stackViewWithViews:@[ save, revert, _scriptPathLabel ]];
     NSStackView* page = column(@[ scroll, buttons ]);
     [scroll.widthAnchor constraintEqualToAnchor:page.widthAnchor constant:-32].active = YES;
@@ -214,7 +221,7 @@ NSStackView* column(NSArray<NSView*>* views) {
 
 - (NSView*)overridesTab {
     _fontFace = [NSTextField textFieldWithString:@""];
-    _fontFace.placeholderString = @"the skin's";
+    _fontFace.placeholderString = ns(text::kSkinDefault);
     _fontFace.delegate = self;
     [_fontFace.widthAnchor constraintEqualToConstant:200].active = YES;
     _fontSize = [NSTextField textFieldWithString:@""];
@@ -224,7 +231,7 @@ NSStackView* column(NSArray<NSView*>* views) {
 
     _accentWell = [[NSColorWell alloc] initWithFrame:NSMakeRect(0, 0, 44, 24)];
     _accentWell.target = self; _accentWell.action = @selector(accentChanged:);
-    NSButton* clearAccent = [NSButton buttonWithTitle:@"Use the skin's" target:self action:@selector(clearAccent:)];
+    NSButton* clearAccent = [NSButton buttonWithTitle:ns(text::kUseSkinAccent) target:self action:@selector(clearAccent:)];
     NSStackView* accentRow = [NSStackView stackViewWithViews:@[ _accentWell, clearAccent ]];
 
     NSGridView* grid = [NSGridView gridViewWithViews:@[
@@ -251,7 +258,7 @@ NSStackView* column(NSArray<NSView*>* views) {
 
 - (void)refresh {
     const pui::PrefsSettings& s = _model->pending();
-    _rootField.stringValue = s.root.empty() ? @"(none: the component's own folder)" : ns(s.root);
+    _rootField.stringValue = s.root.empty() ? ns(text::kNoRoot) : ns(s.root);
 
     fill_popup(_skinPopup, _model->skin_labels(), _model->skin_index());
     fill_popup(_mainPopup, _model->main_labels(), _model->main_index());
@@ -264,10 +271,11 @@ NSStackView* column(NSArray<NSView*>* views) {
     _previewNote.hidden = img != nil;
 
     [_zoomPopup selectItemAtIndex:_model->zoom_index()];
+    [_languagePopup selectItemAtIndex:_model->language_index()];
     _onTopCheck.state = s.onTop ? NSControlStateValueOn : NSControlStateValueOff;
     _verboseCheck.state = s.verbose ? NSControlStateValueOn : NSControlStateValueOff;
     const std::string log = _model->log_path();
-    _logPath.stringValue = ns(std::string(text::kLogFile) + " " + (log.empty() ? text::kNoLog : log));
+    _logPath.stringValue = ns(std::string(pui::tr(text::kLogFile)) + " " + (log.empty() ? pui::tr(text::kNoLog) : log));
 
     _scriptView.string = ns(_model->script());
     _scriptPathLabel.stringValue = ns(_model->script_path());
@@ -306,6 +314,7 @@ NSStackView* column(NSArray<NSView*>* views) {
 - (void)skinChanged:(id)sender { _model->set_skin_index((int)_skinPopup.indexOfSelectedItem); [self commit]; }
 - (void)mainChanged:(id)sender { _model->set_main_index((int)_mainPopup.indexOfSelectedItem); [self commit]; }
 - (void)zoomChanged:(id)sender { _model->set_zoom_index((int)_zoomPopup.indexOfSelectedItem); [self commit]; }
+- (void)languageChanged:(id)sender { _model->set_language_index((int)_languagePopup.indexOfSelectedItem); [self commit]; }
 - (void)onTopChanged:(id)sender { _model->set_on_top(_onTopCheck.state == NSControlStateValueOn); [self commit]; }
 - (void)openWizard:(id)sender {
     if (pui::open_layout_wizard()) return;

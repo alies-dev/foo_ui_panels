@@ -131,7 +131,7 @@ void PlaylistView::paint(gfx::Canvas& cv) {
             pfc::string8 art = fmt(h0, g_pl.artist);
             cv.draw_text(art.get_ptr(), gfx::Rect::ltrb(50, y + 2, W - 70, y + 18), kLine | gfx::kEndEllipsis,
                          col("text", gfx::Color(235, 240, 255)));
-            char cnt[32]; snprintf(cnt, sizeof cnt, "%u TRACKS", (unsigned)count);
+            const std::string cnt = trf("{0} TRACKS", { std::to_string(count) });
             cv.set_font(kSubFont);
             cv.draw_text(cnt, gfx::Rect::ltrb(W - 120, y + 3, W - 6, y + 18), gfx::kAlignRight | kLine,
                          col("text_dim", gfx::Color(150, 170, 210)));
@@ -256,9 +256,8 @@ void PlaylistView::header_menu(int x, int y) {
     ui::Menu m;
     for (const auto& c : playlist_header_columns(host()->bounds().w, stars)) {
         ui::MenuItem it;
-        std::string name = c.label;
-        for (char& ch : name) ch = (char)std::tolower((unsigned char)ch);
-        it.label = "Sort by " + name;
+        static const char* const kSortBy[] = { N_("Sort by album"), N_("Sort by title"), N_("Sort by rating"), N_("Sort by length") };
+        it.label = tr(kSortBy[(int)c.col]);
         it.id = 1 + (int)c.col;
         it.checked = c.col == m_sort.col;
         m.push_back(it);

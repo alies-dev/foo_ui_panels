@@ -29,7 +29,7 @@ void TrackDisplay::set_script(const char* spec) {
     if (!titleformat_compiler::get()->compile(m_script, text)) {
         if (m_engine && spec && *spec)
             m_engine->add_script_problem(m_engine->panel_script_label(m_name),
-                                         "Doesn't compile (unbalanced parentheses or quotes?)");
+                                         N_("Doesn't compile (unbalanced parentheses or quotes?)"));
         titleformat_compiler::get()->compile_safe(m_script, text);
     }
 }
@@ -85,11 +85,11 @@ bool TrackDisplay::apply_code(const std::string& utf8) {
 
 void TrackDisplay::open_code_editor() {
     if (!m_engine || m_name.empty() || m_engine->base_dir().empty() || !m_engine->main_window()) return;
-    ui::open_text_editor(*m_engine->main_window(), "code:" + m_name, "Edit code - " + m_name,
+    ui::open_text_editor(*m_engine->main_window(), "code:" + m_name, trf("Edit code - {0}", { m_name }),
                          m_engine->read_panel_script_raw(m_name),
                          [this](const std::string& text) {
                              if (apply_code(text)) return true;
-                             ui::message_box(host(), "Edit code", "Could not save the panel script.");
+                             ui::message_box(host(), tr("Edit code"), tr("Could not save the panel script."));
                              return false;
                          });
 }
@@ -103,7 +103,7 @@ void TrackDisplay::on_rclick(int x, int y) {
     ui::Menu m;
     enum { kEdit = 1, kCover = 100 };
     if (add_cover_menu_items(m, kCover)) m.push_back(ui::MenuItem::sep());
-    ui::MenuItem edit; edit.label = "Edit code..."; edit.id = kEdit; m.push_back(edit);
+    ui::MenuItem edit; edit.label = tr("Edit code..."); edit.id = kEdit; m.push_back(edit);
     const int id = ui::popup_menu(host(), x, y, m);
     if (id == kEdit) open_code_editor();
     else run_cover_menu_item(m_engine, id, kCover);

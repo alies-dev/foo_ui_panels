@@ -355,10 +355,10 @@ void LyricsPanel::paint(gfx::Canvas& cv) {
     if (m_lyrics.lines.empty() && !syncing) {
         std::string msg, link;
         const TrackIds ids = np.is_valid() ? ids_for(np) : TrackIds();
-        if (!np.is_valid()) msg = "Nothing playing";
-        else if (g_fetching.count(ids.key)) msg = m_navidrome ? "Searching Navidrome..." : "Searching lrclib.net...";
-        else if (g_failed.count(ids.key)) { msg = "No lyrics found online"; link = "Search again"; }
-        else { msg = "No lyrics found"; link = "Search online (lrclib.net)"; }
+        if (!np.is_valid()) msg = tr("Nothing playing");
+        else if (g_fetching.count(ids.key)) msg = m_navidrome ? tr("Searching Navidrome...") : tr("Searching lrclib.net...");
+        else if (g_failed.count(ids.key)) { msg = tr("No lyrics found online"); link = tr("Search again"); }
+        else { msg = tr("No lyrics found"); link = tr("Search online (lrclib.net)"); }
         const int th = cv.text_height(msg, tw, dtf);
         int y = H / 2 - th - 4;
         gfx::Rect rm{ padX, y, tw, th };
@@ -426,12 +426,10 @@ void LyricsPanel::paint(gfx::Canvas& cv) {
         if (syncing) {
             size_t count = 0;
             for (auto& l : m_sync.lines()) if (!l.empty()) ++count;
-            char hdr[200];
-            if (m_sync.done())
-                snprintf(hdr, sizeof hdr, "All %zu lines stamped - right-click to save", count);
-            else
-                snprintf(hdr, sizeof hdr, "Sync %zu/%zu - Space or click: stamp the highlighted line as it starts - Backspace: undo - Esc: cancel",
-                         m_sync.stamped(), count);
+            const std::string hdr = m_sync.done()
+                ? trf("All {0} lines stamped - right-click to save", { std::to_string(count) })
+                : trf("Sync {0}/{1} - Space or click: stamp the highlighted line as it starts - Backspace: undo - Esc: cancel",
+                      { std::to_string(m_sync.stamped()), std::to_string(count) });
             gfx::FontSpec fh{ "Segoe UI", (float)std::max(8, s.size * 2 / 3), true };
             cv.set_font(fh);
             const unsigned hf = gfx::kAlignCenter | gfx::kWordWrap;
@@ -506,7 +504,7 @@ void LyricsPanel::save_sync(bool sidecar) {
     const TrackIds ids = ids_for(np);
     const std::string path = sidecar ? (sidecar_base(np).empty() ? std::string() : sidecar_base(np) + ".lrc") : ids.cache;
     if (path.empty() || !write_file(path, m_sync.to_lrc(ids.artist, ids.title, ids.album))) {
-        ui::message_box(host(), "Lyrics", "Couldn't save the lyrics to\n" + (path.empty() ? std::string("(no location)") : path));
+        ui::message_box(host(), tr("Lyrics"), trf("Couldn't save the lyrics to\n{0}", { path.empty() ? std::string(tr("(no location)")) : path }));
         return;
     }
     set_track_offset(ids.key, 0);
@@ -526,13 +524,13 @@ void LyricsPanel::show_sync_menu(int x, int y) {
         ui::MenuItem m; m.label = std::move(label); m.id = id; m.enabled = enabled; return m;
     };
     ui::Menu menu;
-    menu.push_back(item("Stamp the highlighted line (Space)", kStamp, !m_sync.done()));
-    menu.push_back(item("Undo the last stamp (Backspace)", kUndo, any));
+    menu.push_back(item(tr("Stamp the highlighted line (Space)"), kStamp, !m_sync.done()));
+    menu.push_back(item(tr("Undo the last stamp (Backspace)"), kUndo, any));
     menu.push_back(ui::MenuItem::sep());
-    menu.push_back(item("Save as .lrc next to the track", kSaveSidecar, any && canSidecar));
-    menu.push_back(item("Save to the lyrics cache", kSaveCache, any));
+    menu.push_back(item(tr("Save as .lrc next to the track"), kSaveSidecar, any && canSidecar));
+    menu.push_back(item(tr("Save to the lyrics cache"), kSaveCache, any));
     menu.push_back(ui::MenuItem::sep());
-    menu.push_back(item("Cancel syncing (Esc)", kCancel));
+    menu.push_back(item(tr("Cancel syncing (Esc)"), kCancel));
     switch (ui::popup_menu(host(), x, y, menu)) {
     case kStamp: sync_stamp(); break;
     case kUndo: sync_undo(); break;
@@ -568,31 +566,31 @@ void LyricsPanel::show_settings_menu(SkinEngine* engine, ui::ViewHost* owner, in
     for (int i = 0; i < 7; ++i) { snprintf(l, sizeof l, "%+.1f s", kOffsets[i] / 1000.0); offs.push_back(item(l, kOffset + i, s.offsetMs == kOffsets[i])); }
     for (int i = 0; i < 4; ++i) { snprintf(l, sizeof l, "%+.1f s", kTrackSteps[i] / 1000.0); toffs.push_back(item(l, kTrackOffset + i)); }
     toffs.push_back(ui::MenuItem::sep());
-    snprintf(l, sizeof l, "Reset (now %+.1f s)", trackMs / 1000.0);
-    toffs.push_back(item(l, kTrackOffsetReset));
-    kara.push_back(item("Off", kKaraoke + 0, s.karaoke == 0));
-    kara.push_back(item("Word-timed lyrics only", kKaraoke + 1, s.karaoke == 1));
-    kara.push_back(item("All synced lyrics (estimated timing)", kKaraoke + 2, s.karaoke == 2));
-    cols.push_back(item("Lyrics without timestamps...", kColPlain));
-    cols.push_back(item("Timestamped lines...", kColSynced));
-    cols.push_back(item("Current line...", kColCur));
+    snprintf(l, sizeof l, "%+.1f", trackMs / 1000.0);
+    toffs.push_back(item(trf("Reset (now {0} s)", { l }), kTrackOffsetReset));
+    kara.push_back(item(tr("Off"), kKaraoke + 0, s.karaoke == 0));
+    kara.push_back(item(tr("Word-timed lyrics only"), kKaraoke + 1, s.karaoke == 1));
+    kara.push_back(item(tr("All synced lyrics (estimated timing)"), kKaraoke + 2, s.karaoke == 2));
+    cols.push_back(item(tr("Lyrics without timestamps..."), kColPlain));
+    cols.push_back(item(tr("Timestamped lines..."), kColSynced));
+    cols.push_back(item(tr("Current line..."), kColCur));
     ui::Menu menu;
-    menu.push_back(sub("Font size", sizes));
-    menu.push_back(sub("Colours", cols));
-    menu.push_back(sub("Cover darkening", dims));
-    menu.push_back(sub("Timing offset (all tracks)", offs));
-    if (!key.empty()) menu.push_back(sub("Timing offset (this track)", toffs));
-    menu.push_back(sub("Karaoke highlight", kara));
+    menu.push_back(sub(tr("Font size"), sizes));
+    menu.push_back(sub(tr("Colours"), cols));
+    menu.push_back(sub(tr("Cover darkening"), dims));
+    menu.push_back(sub(tr("Timing offset (all tracks)"), offs));
+    if (!key.empty()) menu.push_back(sub(tr("Timing offset (this track)"), toffs));
+    menu.push_back(sub(tr("Karaoke highlight"), kara));
     menu.push_back(ui::MenuItem::sep());
     {
-        ui::MenuItem m = item("Sync these lyrics by tapping (restarts the track)...", kSync);
+        ui::MenuItem m = item(tr("Sync these lyrics by tapping (restarts the track)..."), kSync);
         m.enabled = haveLyrics;
         menu.push_back(m);
     }
-    menu.push_back(item(haveLyrics ? "Search online again (replace these lyrics)" : "Search lyrics online now (lrclib.net)", kFetchNow));
-    menu.push_back(item("Search online automatically", kOnline, s.online));
+    menu.push_back(item(haveLyrics ? tr("Search online again (replace these lyrics)") : tr("Search lyrics online now (lrclib.net)"), kFetchNow));
+    menu.push_back(item(tr("Search online automatically"), kOnline, s.online));
     menu.push_back(ui::MenuItem::sep());
-    menu.push_back(item("Reset lyrics settings", kReset));
+    menu.push_back(item(tr("Reset lyrics settings"), kReset));
 
     const int cmd = ui::popup_menu(owner, x, y, menu);
     if (!cmd) return;
